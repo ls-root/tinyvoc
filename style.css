@@ -1,0 +1,13 @@
+body {
+    background-color: black;
+    color: white;
+    font-family: monospace;
+}
+
+strong {
+    color: rgb(0, 0, 255);
+}
+
+h1, p {
+    margin: 0;
+}
