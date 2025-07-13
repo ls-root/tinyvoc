@@ -4,6 +4,7 @@ let currentKeyValue = ""
 let currentValueValue = ""
 let currentTValueValue = ""
 let currentRandomKey = ""
+let alreadyAsked = []
 let db
 
 document.addEventListener("keydown", async e => {
@@ -28,7 +29,7 @@ document.addEventListener("keydown", async e => {
     document.getElementById("tm").style.display = "block"
     menu = "tm"
 
-    // Get a random key 
+    // Get a random key
     const allData = await readAllData()
     if (allData.length > 0) {
       const randomIndex = Math.floor(Math.random() * allData.length)
@@ -36,10 +37,14 @@ document.addEventListener("keydown", async e => {
       document.getElementById("tkey").innerText = currentRandomKey
       document.getElementById("tvalue").innerText = "???"
       currentTValueValue = ""
+        alreadyAsked.push(currentRandomKey)
     } else {
       document.getElementById("tkey").innerText = "No vocabulary yet!"
       document.getElementById("tvalue").innerText = ""
     }
+
+      e.preventDefault()
+      return
   }
 
   if (e.key === "-") {
@@ -107,19 +112,41 @@ document.addEventListener("keydown", async e => {
         } else {
           document.getElementById("tvalue").style.color = "red"
           document.getElementById("tvalue").innerText = `Incorrect!`
+            let index = alreadyAsked.indexOf(currentRandomKey)
+            alreadyAsked.splice(index, 1)
         }
-        setTimeout(async () => {
-          // Get a new random key
-          const allData = await readAllData()
-          if (allData.length > 0) {
-            const randomIndex = Math.floor(Math.random() * allData.length)
-            currentRandomKey = allData[randomIndex].key
-            document.getElementById("tkey").innerText = currentRandomKey
-            document.getElementById("tvalue").innerText = "???"
-            currentTValueValue = ""
-            document.getElementById("tvalue").style.color = "blue"
+          async function generateRandomKey() {
+              const allData = await readAllData()
 
+              // Update Progress
+          document.getElementById("trainfooter").innerText = mkbanner(`${alreadyAsked.length + 1}/${allData.length}`, 45)
+              if (alreadyAsked.length === allData.length) {
+                  document.getElementById("trainfooter").innerText = mkbanner("Training Finished!", 45)
+
+                  document.getElementById("tkey").innerText = ""
+                  document.getElementById("tvalue").innerText = ""
+                  currentTValueValue = ""
+                  document.getElementById("tvalue").style.color = "blue"
+                  return
+              }
+
+              const randomIndex = Math.floor(Math.random() * allData.length)
+              currentRandomKey = allData[randomIndex].key
+
+              if (alreadyAsked.includes(currentRandomKey)) {
+                  generateRandomKey()
+                  return
+              }
+
+              document.getElementById("tkey").innerText = currentRandomKey
+              document.getElementById("tvalue").innerText = "???"
+              currentTValueValue = ""
+              document.getElementById("tvalue").style.color = "blue"
+              alreadyAsked.push(currentRandomKey)
           }
+
+          setTimeout(async () => {
+              generateRandomKey()
         }, 350)
         e.preventDefault()
       } else if (e.key === "Backspace") {
@@ -147,7 +174,7 @@ function mkbanner(thing, lthing) {
 document.getElementById("vocbanner").innerText = mkbanner("TinyVoc", 45)
 document.getElementById("addbanner").innerText = mkbanner("Add vocabulary", 45)
 document.getElementById("trainbanner").innerText = mkbanner("Train vocabulary", 45)
-document.getElementById("trainfooter").innerText = mkbanner("", 45)
+document.getElementById("trainfooter").innerText = mkbanner("1/3", 45)
 document.getElementById("vocfooter").innerText = mkbanner("", 45)
 document.getElementById("addfooter").innerText = mkbanner("", 45)
 
