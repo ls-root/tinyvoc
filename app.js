@@ -131,7 +131,7 @@ async function handleViewMenu(e) {
 
       resetView()
       data.forEach(element => {
-        addToView(element.key, element.value, element.lection)
+          addToView(element.key, element.value, element.lection, element.right, element.wrong)
       })
 
       viewstate = 'done'
@@ -246,15 +246,39 @@ function nextQuestion() {
 }
 
 async function checkAnswer() {
-  const key = document.getElementById('tkey').innerText
-  const correct = await getData(key)
-  const tval = currentTValueValue.trim()
-  const tvElt = document.getElementById('tvalue')
-  tvElt.style.color = tval===correct ? 'green' : 'red'
-  setTimeout(()=>{
-    tvElt.style.color = 'blue'
-    nextQuestion()
-  },500)
+    const key = document.getElementById('tkey').innerText
+    const correctValue = await getData(key)
+    const tval = currentTValueValue.trim()
+    const tvElt = document.getElementById('tvalue')
+    const isCorrect = tval === correctValue
+
+    // Show color feedback
+    tvElt.style.color = isCorrect ? 'green' : 'red'
+
+    // Update stats
+    const tx = db.transaction('vocabulary', 'readwrite')
+    const store = tx.objectStore('vocabulary')
+    const rq = store.get(key)
+    rq.onsuccess = () => {
+        const data = rq.result
+        if (!data) return
+        if (isCorrect) {
+            data.right = (data.right || 0) + 1
+            data.weight = Math.max(1, (data.weight || 1) - 1)
+        } else {
+            data.wrong = (data.wrong || 0) + 1
+            data.weight = (data.weight || 1) + 1
+        }
+        store.put(data)
+    }
+    setTimeout(() => {
+        tvElt.style.color = 'blue'
+        if (!isCorrect) {
+            shuffledKeys.push(key)
+            shuffledKeys.sort(() => Math.random() - .5)
+        }
+        nextQuestion()
+    }, 500)
 }
 
 // ——— Banner init ———
@@ -293,7 +317,14 @@ function writeData(key,value,lection) {
   if (!db) return
   const tx = db.transaction('vocabulary','readwrite')
   const store = tx.objectStore('vocabulary')
-  store.put({ key,value,lection })
+  store.put({
+      key,
+      value,
+      lection,
+      weight: 1,
+      wrong: 0,
+      right: 0
+  })
 }
 
 function getData(key) {
@@ -372,20 +403,26 @@ function resetView() {
     document.getElementById("viewElement").innerHTML = ""
 }
 
-function addToView(key, value, lection) {
+function addToView(key, value, lection, right, wrong) {
     const viewElement = document.getElementById("viewElement")
     const tr = document.createElement("tr")
     const tdKey = document.createElement("td")
     const tdValue = document.createElement("td")
+    const tdWrong = document.createElement("td")
+    const tdRight = document.createElement("td")
     const tdLection = document.createElement("td")
 
     tdKey.innerText = key
     tdValue.innerText = value
     tdLection.innerText = lection
+    tdWrong.innerText = wrong
+    tdRight.innerText = right
 
     tr.appendChild(tdKey)
     tr.appendChild(tdValue)
     tr.appendChild(tdLection)
+    tr.appendChild(tdWrong)
+    tr.appendChild(tdRight)
 
     viewElement.appendChild(tr)
 }
