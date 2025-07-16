@@ -11,3 +11,42 @@ strong {
 h1, p {
     margin: 0;
 }
+
+#file {
+    font-family: system-ui, sans-serif;
+    font-size: 0.95rem;
+    padding: 0.4rem;
+    border-radius: 6px;
+    color: #0000;
+}
+
+#file::file-selector-button {
+    border: none;
+    background: none;
+    color: #fff;
+    font-family: monospace;
+    cursor: pointer;
+    transition: background 0.2s;
+}
+
+td {
+    border: 1px solid white;
+    padding-left: 10px;
+    padding-right: 10px;
+}
+
+#printfooter {
+    display: none;
+    justify-content: center;
+    align-items: center;
+}
+
+@media print {
+    #vm p {
+        display: none;
+    }
+
+    #printfooter {
+        display: flex;
+    }
+}
