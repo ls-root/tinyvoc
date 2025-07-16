@@ -1,5 +1,6 @@
 let menu = 'mm'
 let addstate = 'lection'
+let viewstate = 'none'
 let currentKeyValue = ''
 let currentValueValue = ''
 let currentTValueValue = ''
@@ -43,6 +44,9 @@ document.addEventListener('keydown', async e => {
 
   // TRAIN MENU
   if (menu === 'tm') await handleTrainMenu(e)
+
+    // VIEW MENU
+    if(menu === 'vm') await handleViewMenu(e)
 })
 
 // ——— Menu show/hide helpers ———
@@ -95,11 +99,49 @@ async function showViewMenu() {
     hideMainMenu()
     document.getElementById('vm').style.display = 'block'
     resetView()
-    const data = await readAllData()
-    data.forEach((element) => {
-        addToView(element.key, element.value, element.lection)
-    })
+
+    menu = 'vm'
+    viewstate = 'lection'
+    currentLectionValue = ''
+    const ilectionSelect = document.getElementById('ilectionSelect')
+    ilectionSelect.innerText = ""
+    ilectionSelect.style.color = "blue"
 }
+// ——— View menu logic ---
+
+async function handleViewMenu(e) {
+  if (viewstate === 'lection') {
+    if (e.key === 'Backspace') currentLectionValue = currentLectionValue.slice(0,-1)
+    else if (e.key === 'Enter') {
+      const ilectionSelect = document.getElementById('ilectionSelect')
+      ilectionSelect.style.color = 'white'
+
+      let data
+      if (currentLectionValue.toLowerCase() === 'all') {
+        data = await readAllData()
+      } else {
+        const lections = await readAllLections()
+        if (lections.includes(currentLectionValue)) {
+          data = await readLectionData(currentLectionValue)
+        } else {
+          ilectionSelect.style.color = 'red'
+          return
+        }
+      }
+
+      resetView()
+      data.forEach(element => {
+        addToView(element.key, element.value, element.lection)
+      })
+
+      viewstate = 'done'
+      e.preventDefault()
+    }
+    else if (e.key.length === 1) currentLectionValue += e.key
+    document.getElementById('ilectionSelect').innerText = currentLectionValue
+  }
+}
+
 // ——— Add menu logic ———
 
 function handleAddMenu(e) {
@@ -163,14 +205,14 @@ async function handleTrainMenu(e) {
       const lections = await readAllLections()
       if (lections.includes(currentLectionValue)) {
         selectedLection = currentLectionValue
-        document.getElementById('tlectiont').style.color = 'white'
+        document.getElementById('tlection').style.color = 'white'
         document.getElementById('tlection').innerText = selectedLection
         dataToTrain = await readLectionData(selectedLection)
         shuffledKeys = dataToTrain.map(x=>x.key).sort(()=>Math.random()-.5)
         trainstate = 'quiz'
         nextQuestion()
       } else {
-        document.getElementById('tlectiont').style.color = 'red'
+        document.getElementById('tlection').style.color = 'red'
       }
       e.preventDefault()
     }
@@ -365,7 +407,7 @@ function getFile() {
 
                 fileInput.style.display = "none"
                 importText.style.display = "block"
-                importText.innerHTML = "Do you want to add <span>(b)</span> it or overwrite <span>(o)</span>?"
+                importText.innerHTML = "Do you want to add <strong>(b)</strong> it or overwrite <strong>(o)</strong>?"
 
                 const handler = async (ev) => {
                     if (ev.key === 'b' || ev.key === 'B') {
