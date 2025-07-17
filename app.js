@@ -1,474 +1,715 @@
-let menu = 'mm'
-let addstate = 'lection'
-let viewstate = 'none'
-let currentKeyValue = ''
-let currentValueValue = ''
-let currentTValueValue = ''
-let currentLectionValue = ''
-let selectedLection = ''
+let menu = "mm"
+let addstate = "lection"
+let viewstate = "none"
+let currentKeyValue = ""
+let currentValueValue = ""
+let currentTValueValue = ""
+let currentLectionValue = ""
+let currentTransformValue = ""
+let currentActionValue = ""
+let currentParamValue = ""
+let currentParam2Value = ""
+let selectedLection = ""
+let generateState = "transform"
 let dataToTrain = []
 let shuffledKeys = []
 let db
+let AvabialeModes = Array.from({ length: 5 }, (e, i) => i)
+let GenerateModesDescription = {
+  0: "Sort",
+  1: "Reverse",
+  2: "Remove all under specified value",
+  3: "Remove all over specified value",
+  4: "Strip down to specified value",
+}
+let GenerateModesParams = {
+  0: 1,
+  1: 0,
+  2: 2,
+  3: 2,
+  4: 1,
+}
 
-document.addEventListener('keydown', async e => {
-  const sel = document.getElementById('selection')
+document.addEventListener("keydown", async (e) => {
+  const sel = document.getElementById("selection")
   sel.innerText = e.key
-    sel.style.color = ['a','t','A','T','e', 'E', 'i', 'I', 'v', 'V', '-','Enter'].includes(e.key) ? 'blue' : 'red'
+  sel.style.color = [
+    "a",
+    "t",
+    "A",
+    "T",
+    "e",
+    "E",
+    "i",
+    "I",
+    "v",
+    "V",
+    "g",
+    "G",
+    "-",
+    "Enter",
+  ].includes(e.key)
+    ? "blue"
+    : "red"
 
   // MAIN MENU
-  if (menu === 'mm') {
-    if ((e.key === 'a' || e.key === 'A')) {
+  if (menu === "mm") {
+    if (e.key === "a" || e.key === "A") {
       showAddMenu()
-    } else if ((e.key === 't' || e.key === 'T')) {
+    } else if (e.key === "t" || e.key === "T") {
       showTrainMenu()
-    } else if ((e.key === 'e' || e.key === 'E')) {
-        download(JSON.stringify(await readAllData()))
-    } else if ((e.key === "i" || e.key === "I")) {
-        getFile()
-    } else if ((e.key === "v" || e.key ===  "V")) {
-        showViewMenu()
+    } else if (e.key === "e" || e.key === "E") {
+      download(JSON.stringify(await readAllData()))
+    } else if (e.key === "i" || e.key === "I") {
+      getFile()
+    } else if (e.key === "v" || e.key === "V") {
+      showViewMenu()
+    } else if (e.key === "g" || e.key === "G") {
+      showGenerateMenu()
     }
   }
 
   // BACK TO MAIN
-  if (e.key === '-') {
+  if (e.key === "-") {
     hideAddMenu()
     hideTrainMenu()
-      hideViewMenu()
+    hideViewMenu()
+    hideGenerateMenu()
     showMainMenu()
-    sel.innerText = ''
+    sel.innerText = ""
   }
 
   // ADD MENU
-  if (menu === 'am') handleAddMenu(e)
+  if (menu === "am") handleAddMenu(e)
 
   // TRAIN MENU
-  if (menu === 'tm') await handleTrainMenu(e)
+  if (menu === "tm") await handleTrainMenu(e)
 
-    // VIEW MENU
-    if(menu === 'vm') await handleViewMenu(e)
+  // VIEW MENU
+  if (menu === "vm") await handleViewMenu(e)
+
+  // GENERATE MENU
+  if (menu === "gm") handleGenerateMenu(e)
 })
 
 // ——— Menu show/hide helpers ———
 
 function showMainMenu() {
-  document.getElementById('mm').style.display = 'block'
-  menu = 'mm'
+  document.getElementById("mm").style.display = "block"
+  menu = "mm"
 }
 
 function hideAddMenu() {
-  document.getElementById('am').style.display = 'none'
+  document.getElementById("am").style.display = "none"
 }
 
 function hideTrainMenu() {
-  document.getElementById('tm').style.display = 'none'
+  document.getElementById("tm").style.display = "none"
+}
+
+function hideGenerateMenu() {
+  document.getElementById("gm").style.display = "none"
 }
 
 function showAddMenu() {
   hideTrainMenu()
   hideMainMenu()
-  document.getElementById('am').style.display = 'block'
-  menu = 'am'
-  addstate = 'lection'
-  currentLectionValue = ''
-  currentKeyValue = ''
-  currentValueValue = ''
-  document.getElementById('lection').innerText = ''
-  document.getElementById('key').innerText = ''
-  document.getElementById('valuevalue').innerText = ''
-  document.getElementById('value').style.display = 'none'
+  hideGenerateMenu()
+  hideViewMenu()
+  document.getElementById("am").style.display = "block"
+  menu = "am"
+  addstate = "lection"
+  currentLectionValue = ""
+  currentKeyValue = ""
+  currentValueValue = ""
+  document.getElementById("lection").innerText = ""
+  document.getElementById("key").innerText = ""
+  document.getElementById("valuevalue").innerText = ""
+  document.getElementById("value").style.display = "none"
 }
 
 function showTrainMenu() {
   hideAddMenu()
   hideMainMenu()
-  document.getElementById('tm').style.display = 'block'
-  menu = 'tm'
+  hideGenerateMenu()
+  document.getElementById("tm").style.display = "block"
+  menu = "tm"
   trainInit()
 }
 
 function hideMainMenu() {
-  document.getElementById('mm').style.display = 'none'
+  document.getElementById("mm").style.display = "none"
 }
 
 function hideViewMenu() {
-    document.getElementById('vm').style.display = 'none'
+  document.getElementById("vm").style.display = "none"
+}
+
+function showGenerateMenu() {
+  document.getElementById("gm").style.display = "block"
+  menu = "gm"
+  hideMainMenu()
+
+  currentTransformValue = ""
+  currentActionValue = ""
+  currentParamValue = ""
+  currentParam2Value = ""
+  generateState = "transform"
+
+  const transformEl = document.getElementById("transformt")
+  const actionEl = document.getElementById("actiont")
+  const paramEl = document.getElementById("paramt")
+  const param2El = document.getElementById("param2t")
+
+  transformEl.innerText = ""
+  transformEl.style.color = "blue"
+  actionEl.innerText = ""
+  actionEl.style.color = "blue"
+  paramEl.innerText = ""
+  paramEl.style.color = "blue"
+  param2El.innerText = ""
+  param2El.style.color = "blue"
 }
 
 async function showViewMenu() {
-    hideMainMenu()
-    document.getElementById('vm').style.display = 'block'
-    resetView()
+  hideMainMenu()
+  document.getElementById("vm").style.display = "block"
+  resetView()
 
-    menu = 'vm'
-    viewstate = 'lection'
-    currentLectionValue = ''
-    const ilectionSelect = document.getElementById('ilectionSelect')
-    ilectionSelect.innerText = ""
-    ilectionSelect.style.color = "blue"
+  menu = "vm"
+  viewstate = "lection"
+  currentLectionValue = ""
+  const ilectionSelect = document.getElementById("ilectionSelect")
+  ilectionSelect.innerText = ""
+  ilectionSelect.style.color = "blue"
 }
 // ——— View menu logic ---
 
 async function handleViewMenu(e) {
-  if (viewstate === 'lection') {
-    if (e.key === 'Backspace') currentLectionValue = currentLectionValue.slice(0,-1)
-    else if (e.key === 'Enter') {
-      const ilectionSelect = document.getElementById('ilectionSelect')
-      ilectionSelect.style.color = 'white'
+  if (viewstate === "lection") {
+    if (e.key === "Backspace")
+      currentLectionValue = currentLectionValue.slice(0, -1)
+    else if (e.key === "Enter") {
+      const ilectionSelect = document.getElementById("ilectionSelect")
+      ilectionSelect.style.color = "white"
 
       let data
-      if (currentLectionValue.toLowerCase() === 'all') {
+      if (currentLectionValue.toLowerCase() === "all") {
         data = await readAllData()
       } else {
         const lections = await readAllLections()
         if (lections.includes(currentLectionValue)) {
           data = await readLectionData(currentLectionValue)
         } else {
-          ilectionSelect.style.color = 'red'
+          ilectionSelect.style.color = "red"
           return
         }
       }
 
       resetView()
-      data.forEach(element => {
-          addToView(element.key, element.value, element.lection, element.right, element.wrong)
+      data.forEach((element) => {
+        addToView(
+          element.key,
+          element.value,
+          element.lection,
+          element.right,
+          element.wrong,
+        )
       })
 
-      viewstate = 'done'
+      viewstate = "done"
       e.preventDefault()
-    }
-    else if (e.key.length === 1) currentLectionValue += e.key
-    document.getElementById('ilectionSelect').innerText = currentLectionValue
+    } else if (e.key.length === 1) currentLectionValue += e.key
+    document.getElementById("ilectionSelect").innerText = currentLectionValue
   }
 }
 
 // ——— Add menu logic ———
 
 function handleAddMenu(e) {
-  if (addstate === 'lection') {
-    if (e.key === 'Backspace') currentLectionValue = currentLectionValue.slice(0,-1)
-    else if (e.key === 'Enter') {
-      addstate = 'key'
-      document.getElementById('lectiont').style.color = 'white'
+  if (addstate === "lection") {
+    if (e.key === "Backspace")
+      currentLectionValue = currentLectionValue.slice(0, -1)
+    else if (e.key === "Enter") {
+      addstate = "key"
+      document.getElementById("lectiont").style.color = "white"
       e.preventDefault()
-    }
-    else if (e.key.length === 1) currentLectionValue += e.key
-    document.getElementById('lection').innerText = currentLectionValue
-  }
-  else if (addstate === 'key') {
-    if (e.key === 'Backspace') currentKeyValue = currentKeyValue.slice(0,-1)
-    else if (e.key === 'Enter') {
-      addstate = 'value'
-      document.getElementById('key').style.color = 'white'
-      document.getElementById('value').style.display = 'block'
+    } else if (e.key.length === 1) currentLectionValue += e.key
+    document.getElementById("lection").innerText = currentLectionValue
+  } else if (addstate === "key") {
+    if (e.key === "Backspace") currentKeyValue = currentKeyValue.slice(0, -1)
+    else if (e.key === "Enter") {
+      addstate = "value"
+      document.getElementById("key").style.color = "white"
+      document.getElementById("value").style.display = "block"
+
       e.preventDefault()
-    }
-    else if (e.key.length === 1) currentKeyValue += e.key
-    document.getElementById('key').innerText = currentKeyValue
-  }
-  else if (addstate === 'value') {
-    if (e.key === 'Backspace') currentValueValue = currentValueValue.slice(0,-1)
-    else if (e.key === 'Enter') {
+    } else if (e.key.length === 1) currentKeyValue += e.key
+    document.getElementById("key").innerText = currentKeyValue
+  } else if (addstate === "value") {
+    if (e.key === "Backspace")
+      currentValueValue = currentValueValue.slice(0, -1)
+    else if (e.key === "Enter") {
       writeData(currentKeyValue, currentValueValue, currentLectionValue)
-      currentKeyValue = ''
-      currentValueValue = ''
-      addstate = 'key'
-      document.getElementById('key').innerText = ''
-      document.getElementById('key').style.color = 'blue'
-      document.getElementById('value').style.display = 'none'
-      document.getElementById('valuevalue').innerText = ''
+      currentKeyValue = ""
+      currentValueValue = ""
+      addstate = "key"
+      document.getElementById("key").innerText = ""
+      document.getElementById("key").style.color = "blue"
+      document.getElementById("value").style.display = "none"
+      document.getElementById("valuevalue").innerText = ""
       e.preventDefault()
-    }
-    else if (e.key.length === 1) currentValueValue += e.key
-    document.getElementById('valuevalue').innerText = currentValueValue
+    } else if (e.key.length === 1) currentValueValue += e.key
+    document.getElementById("valuevalue").innerText = currentValueValue
   }
+}
+
+// --- Generate menu logic ---
+async function handleGenerateMenu(e) {
+  const transformEl = document.getElementById("transformt")
+  const actionEl = document.getElementById("actiont")
+  const paramEl = document.getElementById("paramt")
+  const param2El = document.getElementById("param2t")
+  const param2Inp = document.getElementById("param2")
+  const param1Inp = document.getElementById("param")
+
+  if (generateState === "transform") {
+    if (e.key === "Backspace") {
+      currentTransformValue = currentTransformValue.slice(0, -1)
+    } else if (e.key === "Enter") {
+      const lections = await readAllLections()
+      if (lections.includes(currentTransformValue)) {
+        currentLectionValue = currentTransformValue
+        transformEl.style.color = "white"
+        generateState = "action"
+      } else {
+        transformEl.style.color = "red"
+      }
+      e.preventDefault()
+    } else if (e.key.length === 1) {
+      currentTransformValue += e.key
+    }
+    transformEl.innerText = currentTransformValue
+  } else if (generateState === "action") {
+    if (e.key === "Backspace") {
+      currentActionValue = currentActionValue.slice(0, -1)
+    } else if (e.key === "Enter") {
+      const n = Number(currentActionValue)
+      if (!isNaN(n) && AvabialeModes.includes(n)) {
+        actionEl.innerText = GenerateModesDescription[n]
+        actionEl.style.color = "white"
+        const needed = GenerateModesParams[n]
+        if (needed === 0) {
+          GenerateList(n, null, null, currentLectionValue)
+        } else if (needed === 1) {
+          param1Inp.style.display = "block"
+          generateState = "param"
+        } else {
+          param1Inp.style.display = "block"
+          param2Inp.style.display = "block"
+          generateState = "param"
+        }
+      } else {
+        actionEl.style.color = "red"
+      }
+      e.preventDefault()
+    } else if (e.key.length === 1) {
+      currentActionValue += e.key
+    }
+    actionEl.innerText = currentActionValue
+  } else if (generateState === "param") {
+    if (e.key === "Backspace") {
+      currentParamValue = currentParamValue.slice(0, -1)
+    } else if (e.key === "Enter") {
+      paramEl.style.color = "white"
+      const actionNum = Number(currentActionValue)
+      if (GenerateModesParams[actionNum] === 1) {
+        GenerateList(actionNum, currentParamValue, null, currentLectionValue)
+      } else {
+        generateState = "param2"
+      }
+      e.preventDefault()
+    } else if (e.key.length === 1) {
+      currentParamValue += e.key
+    }
+    paramEl.innerText = currentParamValue
+  } else if (generateState === "param2") {
+    if (e.key === "Backspace") {
+      currentParam2Value = currentParam2Value.slice(0, -1)
+    } else if (e.key === "Enter") {
+      param2El.style.color = "white"
+      const actionNum = Number(currentActionValue)
+      GenerateList(
+        actionNum,
+        currentParamValue,
+        currentParam2Value,
+        currentLectionValue,
+      )
+      e.preventDefault()
+    } else if (e.key.length === 1) {
+      currentParam2Value += e.key
+    }
+    param2El.innerText = currentParam2Value
+  }
+}
+
+async function GenerateList(action, param, param2, lection) {
+  console.log("Generating list")
+  console.log("Action: ", action)
+  console.log("Param: ", param)
+  console.log("Param2: ", param2)
+  alert(lection)
+  const data = await readLectionData(lection)
+  let result = []
+
+  if (action == 0) {
+    // Sort
+    const sortProp = param || "key"
+    result = [...data].sort((a, b) => {
+      if (["right", "wrong", "weight"].includes(sortProp)) {
+        return (a[sortProp] || 0) - (b[sortProp] || 0)
+      }
+      return String(a[sortProp]).localeCompare(String(b[sortProp]))
+    })
+  } else if (action == 1) {
+    // Reverse
+    console.log("data:", data)
+    result = [...data].reverse()
+
+    console.log("result:", result)
+  } else if (action == 2) {
+    // Remove all under specified value
+    const num = Number(param)
+    result = data.filter((entry) => Number(entry[param2]) > num)
+  } else if (action == 3) {
+    // Remove all ober specified value
+    const num = Number(param)
+    result = data.filter((entry) => Number(entry[param2]) < num)
+  } else if (action == 4) {
+    // Strip down to specified value (keep only top N entries)
+    const n = Number(param)
+    result = data.slice(0, n)
+  }
+  let target = lection + "t"
+  const allLections = await readAllLections()
+  while (allLections.includes(target)) {
+    target += "t"
+  }
+
+  result.forEach((item) => {
+    writeData(item.key, item.value, target)
+  })
+
+  document.getElementById("ttransto").innerText = target
+  return result
 }
 
 // ——— Train menu logic ———
 
-let trainstate = 'lection'
+let trainstate = "lection"
 async function trainInit() {
-  trainstate = 'lection'
-  currentLectionValue = ''
-  selectedLection = ''
-  document.getElementById('tlection').innerText = ''
-  document.getElementById('tlectiont').style.color = 'white'
-  document.getElementById('tkey').innerText = ''
-  document.getElementById('tvalue').innerText = '???'
-  document.getElementById('trainfooter').innerText = mkbanner('0/0',45)
+  trainstate = "lection"
+  currentLectionValue = ""
+  selectedLection = ""
+  document.getElementById("tlection").innerText = ""
+  document.getElementById("tlectiont").style.color = "white"
+  document.getElementById("tkey").innerText = ""
+  document.getElementById("tvalue").innerText = "???"
+  document.getElementById("trainfooter").innerText = mkbanner("0/0", 45)
 }
 
 async function handleTrainMenu(e) {
-  if (trainstate === 'lection') {
-    if (e.key === 'Backspace') currentLectionValue = currentLectionValue.slice(0,-1)
-    else if (e.key === 'Enter') {
+  if (trainstate === "lection") {
+    if (e.key === "Backspace")
+      currentLectionValue = currentLectionValue.slice(0, -1)
+    else if (e.key === "Enter") {
       const lections = await readAllLections()
       if (lections.includes(currentLectionValue)) {
         selectedLection = currentLectionValue
-        document.getElementById('tlection').style.color = 'white'
-        document.getElementById('tlection').innerText = selectedLection
+        document.getElementById("tlection").style.color = "white"
+        document.getElementById("tlection").innerText = selectedLection
         dataToTrain = await readLectionData(selectedLection)
-        shuffledKeys = dataToTrain.map(x=>x.key).sort(()=>Math.random()-.5)
-        trainstate = 'quiz'
+        shuffledKeys = dataToTrain
+          .map((x) => x.key)
+          .sort(() => Math.random() - 0.5)
+        trainstate = "quiz"
         nextQuestion()
       } else {
-        document.getElementById('tlection').style.color = 'red'
+        document.getElementById("tlection").style.color = "red"
       }
       e.preventDefault()
-    }
-    else if (e.key.length === 1) currentLectionValue += e.key
-    document.getElementById('tlection').innerText = currentLectionValue
-  }
-  else if (trainstate === 'quiz') {
-    if (e.key === 'Backspace') currentTValueValue = currentTValueValue.slice(0,-1)
-    else if (e.key === 'Enter') {
+    } else if (e.key.length === 1) currentLectionValue += e.key
+    document.getElementById("tlection").innerText = currentLectionValue
+  } else if (trainstate === "quiz") {
+    if (e.key === "Backspace")
+      currentTValueValue = currentTValueValue.slice(0, -1)
+    else if (e.key === "Enter") {
       await checkAnswer()
       e.preventDefault()
-    }
-    else if (e.key.length===1||e.key===' ') currentTValueValue += e.key
-    document.getElementById('tvalue').innerText = currentTValueValue||'???'
+    } else if (e.key.length === 1 || e.key === " ") currentTValueValue += e.key
+    document.getElementById("tvalue").innerText = currentTValueValue || "???"
   }
 }
 
 function nextQuestion() {
   if (!shuffledKeys.length) {
-    document.getElementById('trainfooter').innerText = mkbanner('Finished!',45)
-    document.getElementById('tkey').innerText = ''
-    document.getElementById('tvalue').innerText = ''
+    document.getElementById("trainfooter").innerText = mkbanner("Finished!", 45)
+    document.getElementById("tkey").innerText = ""
+    document.getElementById("tvalue").innerText = ""
     return
   }
   const key = shuffledKeys.pop()
-  currentTValueValue = ''
-  document.getElementById('tkey').innerText = key
-  document.getElementById('tvalue').innerText = '???'
+  currentTValueValue = ""
+  document.getElementById("tkey").innerText = key
+  document.getElementById("tvalue").innerText = "???"
   const done = dataToTrain.length - shuffledKeys.length
-  document.getElementById('trainfooter').innerText = mkbanner(`${done}/${dataToTrain.length}`,45)
+  document.getElementById("trainfooter").innerText = mkbanner(
+    `${done}/${dataToTrain.length}`,
+    45,
+  )
 }
 
 async function checkAnswer() {
-    const key = document.getElementById('tkey').innerText
-    const correctValue = await getData(key)
-    const tval = currentTValueValue.trim()
-    const tvElt = document.getElementById('tvalue')
-    const isCorrect = tval === correctValue
+  const key = document.getElementById("tkey").innerText
+  const correctValue = await getData(key)
+  const tval = currentTValueValue.trim()
+  const tvElt = document.getElementById("tvalue")
+  const isCorrect = tval === correctValue
 
-    // Show color feedback
-    tvElt.style.color = isCorrect ? 'green' : 'red'
+  // Show color feedback
+  tvElt.style.color = isCorrect ? "green" : "red"
 
-    // Update stats
-    const tx = db.transaction('vocabulary', 'readwrite')
-    const store = tx.objectStore('vocabulary')
-    const rq = store.get(key)
-    rq.onsuccess = () => {
-        const data = rq.result
-        if (!data) return
-        if (isCorrect) {
-            data.right = (data.right || 0) + 1
-            data.weight = Math.max(1, (data.weight || 1) - 1)
-        } else {
-            data.wrong = (data.wrong || 0) + 1
-            data.weight = (data.weight || 1) + 1
-        }
-        store.put(data)
+  // Update stats
+  const tx = db.transaction("vocabulary", "readwrite")
+  const store = tx.objectStore("vocabulary")
+  const rq = store.get(key)
+  rq.onsuccess = () => {
+    const data = rq.result
+    if (!data) return
+    if (isCorrect) {
+      data.right = (data.right || 0) + 1
+      data.weight = Math.max(1, (data.weight || 1) - 1)
+    } else {
+      data.wrong = (data.wrong || 0) + 1
+      data.weight = (data.weight || 1) + 1
     }
-    setTimeout(() => {
-        tvElt.style.color = 'blue'
-        if (!isCorrect) {
-            shuffledKeys.push(key)
-            shuffledKeys.sort(() => Math.random() - .5)
-        }
-        nextQuestion()
-    }, 500)
+    store.put(data)
+  }
+  setTimeout(() => {
+    tvElt.style.color = "blue"
+    if (!isCorrect) {
+      shuffledKeys.push(key)
+      shuffledKeys.sort(() => Math.random() - 0.5)
+    }
+    nextQuestion()
+  }, 500)
 }
 
 // ——— Banner init ———
 
-function mkbanner(text,width) {
+function mkbanner(text, width) {
   const pad = width - text.length
-  const l = Math.floor(pad/2), r = Math.ceil(pad/2)
-  return '-'.repeat(l) + text + '-'.repeat(r)
+  const l = Math.floor(pad / 2),
+    r = Math.ceil(pad / 2)
+  return "-".repeat(l) + text + "-".repeat(r)
 }
 
-document.getElementById('vocbanner').innerText = mkbanner('TinyVoc', 45)
-document.getElementById('addbanner').innerText = mkbanner('Add vocabulary', 45)
-document.getElementById('trainbanner').innerText = mkbanner('Train vocabulary', 45)
-document.getElementById('viewbanner').innerText = mkbanner('View vocabulary', 45)
-document.getElementById('printfooter').innerText = mkbanner('Generated by TinyVoc', 50)
-document.getElementById('vocfooter').innerText = mkbanner('', 45)
-document.getElementById('addfooter').innerText = mkbanner('', 45)
-document.getElementById('viewfooter').innerText = mkbanner('', 45)
-document.getElementById('trainfooter').innerText = mkbanner('0/0', 45)
+document.getElementById("vocbanner").innerText = mkbanner("TinyVoc", 45)
+document.getElementById("addbanner").innerText = mkbanner("Add vocabulary", 45)
+document.getElementById("trainbanner").innerText = mkbanner(
+  "Train vocabulary",
+  45,
+)
+document.getElementById("viewbanner").innerText = mkbanner(
+  "View vocabulary",
+  45,
+)
+document.getElementById("printfooter").innerText = mkbanner(
+  "Generated by TinyVoc",
+  50,
+)
+document.getElementById("generateheader").innerText = mkbanner(
+  "Generate List",
+  45,
+)
+document.getElementById("vocfooter").innerText = mkbanner("", 45)
+document.getElementById("addfooter").innerText = mkbanner("", 45)
+document.getElementById("viewfooter").innerText = mkbanner("", 45)
+document.getElementById("generatefooter").innerText = mkbanner("", 45)
+document.getElementById("trainfooter").innerText = mkbanner("0/0", 45)
 
 // ——— IndexedDB & data helpers ———
 
 function initDB() {
-  const req = indexedDB.open('vocTrainerDB',1)
-  req.onupgradeneeded = e=>{
+  const req = indexedDB.open("vocTrainerDB", 1)
+  req.onupgradeneeded = (e) => {
     db = e.target.result
-    if (!db.objectStoreNames.contains('vocabulary')) {
-      db.createObjectStore('vocabulary',{ keyPath:'key' })
+    if (!db.objectStoreNames.contains("vocabulary")) {
+      db.createObjectStore("vocabulary", { keyPath: "key" })
     }
   }
-  req.onsuccess = e=>{ db = e.target.result }
-  req.onerror = e=>console.log('DB error',e)
+  req.onsuccess = (e) => {
+    db = e.target.result
+  }
+  req.onerror = (e) => console.log("DB error", e)
 }
 
-function writeData(key,value,lection) {
+function writeData(key, value, lection) {
   if (!db) return
-  const tx = db.transaction('vocabulary','readwrite')
-  const store = tx.objectStore('vocabulary')
+  const tx = db.transaction("vocabulary", "readwrite")
+  const store = tx.objectStore("vocabulary")
   store.put({
-      key,
-      value,
-      lection,
-      weight: 1,
-      wrong: 0,
-      right: 0
+    key,
+    value,
+    lection,
+    weight: 1,
+    wrong: 0,
+    right: 0,
   })
 }
 
 function getData(key) {
-  return new Promise((res,rej)=>{
+  return new Promise((res, rej) => {
     if (!db) return rej()
-    const tx = db.transaction('vocabulary','readonly')
-    const store = tx.objectStore('vocabulary')
+    const tx = db.transaction("vocabulary", "readonly")
+    const store = tx.objectStore("vocabulary")
     const rq = store.get(key)
-    rq.onsuccess = ()=>res(rq.result?.value||'')
-    rq.onerror = ()=>rej()
+    rq.onsuccess = () => res(rq.result?.value || "")
+    rq.onerror = () => rej()
   })
 }
 
 function readAllData() {
-  return new Promise((res,rej)=>{
+  return new Promise((res, rej) => {
     if (!db) return rej()
-    const tx = db.transaction('vocabulary','readonly')
-    const store = tx.objectStore('vocabulary')
+    const tx = db.transaction("vocabulary", "readonly")
+    const store = tx.objectStore("vocabulary")
     const rq = store.getAll()
-    rq.onsuccess = ()=>res(rq.result)
-    rq.onerror = ()=>rej()
+    rq.onsuccess = () => res(rq.result)
+    rq.onerror = () => rej()
   })
 }
 
 async function readAllLections() {
   const all = await readAllData()
-  return [...new Set(all.map(x=>x.lection))]
+  return [...new Set(all.map((x) => x.lection))]
 }
 
 async function readLectionData(lection) {
   const all = await readAllData()
-  return all.filter(x=>x.lection===lection)
+  return all.filter((x) => x.lection === lection)
 }
 
 function deleteAllData() {
-    return new Promise((res, rej) => {
-        if (!db) return rej()
-        const tx = db.transaction('vocabulary', 'readwrite')
-        const store = tx.objectStore('vocabulary')
-        const rq = store.clear()
-        rq.onsuccess = () => res()
-        rq.onerror = () => rej(rq.error)
-    })
+  return new Promise((res, rej) => {
+    if (!db) return rej()
+    const tx = db.transaction("vocabulary", "readwrite")
+    const store = tx.objectStore("vocabulary")
+    const rq = store.clear()
+    rq.onsuccess = () => res()
+    rq.onerror = () => rej(rq.error)
+  })
 }
 
 function importData(data) {
-    return new Promise((resolve, reject) => {
-        if (!db) return reject('Database not available')
-        const tx = db.transaction('vocabulary', 'readwrite')
-        const store = tx.objectStore('vocabulary')
+  return new Promise((resolve, reject) => {
+    if (!db) return reject("Database not available")
+    const tx = db.transaction("vocabulary", "readwrite")
+    const store = tx.objectStore("vocabulary")
 
-        data.forEach(item => {
-            store.put(item)
-        })
-
-        tx.oncomplete = () => resolve()
-        tx.onerror = (e) => reject(e.target.error)
+    data.forEach((item) => {
+      store.put(item)
     })
+
+    tx.oncomplete = () => resolve()
+    tx.onerror = (e) => reject(e.target.error)
+  })
 }
 
 function download(content) {
-    const blob = new Blob([content], { type: "text/plain" })
-    const url = URL.createObjectURL(blob)
+  const blob = new Blob([content], { type: "text/plain" })
+  const url = URL.createObjectURL(blob)
 
-    const a = document.createElement("a")
-    a.href = url
-    a.download = "voc.tiny"
-    document.body.appendChild(a)
-    a.click()
-    document.body.removeChild(a)
-    URL.revokeObjectURL(url)
+  const a = document.createElement("a")
+  a.href = url
+  a.download = "voc.tiny"
+  document.body.appendChild(a)
+  a.click()
+  document.body.removeChild(a)
+  URL.revokeObjectURL(url)
 }
 
 // View Helpers
 function resetView() {
-    document.getElementById("viewElement").innerHTML = ""
+  document.getElementById("viewElement").innerHTML = ""
 }
 
 function addToView(key, value, lection, right, wrong) {
-    const viewElement = document.getElementById("viewElement")
-    const tr = document.createElement("tr")
-    const tdKey = document.createElement("td")
-    const tdValue = document.createElement("td")
-    const tdWrong = document.createElement("td")
-    const tdRight = document.createElement("td")
-    const tdLection = document.createElement("td")
+  const viewElement = document.getElementById("viewElement")
+  const tr = document.createElement("tr")
+  const tdKey = document.createElement("td")
+  const tdValue = document.createElement("td")
+  const tdWrong = document.createElement("td")
+  const tdRight = document.createElement("td")
+  const tdLection = document.createElement("td")
 
-    tdKey.innerText = key
-    tdValue.innerText = value
-    tdLection.innerText = lection
-    tdWrong.innerText = wrong
-    tdRight.innerText = right
+  tdKey.innerText = key
+  tdValue.innerText = value
+  tdLection.innerText = lection
+  tdWrong.innerText = wrong
+  tdRight.innerText = right
 
-    tr.appendChild(tdKey)
-    tr.appendChild(tdValue)
-    tr.appendChild(tdLection)
-    tr.appendChild(tdWrong)
-    tr.appendChild(tdRight)
+  tr.appendChild(tdKey)
+  tr.appendChild(tdValue)
+  tr.appendChild(tdLection)
+  tr.appendChild(tdWrong)
+  tr.appendChild(tdRight)
 
-    viewElement.appendChild(tr)
+  viewElement.appendChild(tr)
 }
 
 function getFile() {
-    const fileInput = document.getElementById("file")
-    const importText = document.getElementById("iv")
-    importText.style.display = "none"
-    fileInput.style.display = "block"
+  const fileInput = document.getElementById("file")
+  const importText = document.getElementById("iv")
+  importText.style.display = "none"
+  fileInput.style.display = "block"
 
-    fileInput.onchange = () => {
-        const file = fileInput.files[0]
-        if (!file) return
+  fileInput.onchange = () => {
+    const file = fileInput.files[0]
+    if (!file) return
 
-        const reader = new FileReader()
-        reader.onload = async (e) => {
-            try {
-                const importedData = JSON.parse(e.target.result)
+    const reader = new FileReader()
+    reader.onload = async (e) => {
+      try {
+        const importedData = JSON.parse(e.target.result)
 
-                fileInput.style.display = "none"
-                importText.style.display = "block"
-                importText.innerHTML = "Do you want to add <strong>(b)</strong> it or overwrite <strong>(o)</strong>?"
+        fileInput.style.display = "none"
+        importText.style.display = "block"
+        importText.innerHTML =
+          "Do you want to add <strong>(b)</strong> it or overwrite <strong>(o)</strong>?"
 
-                const handler = async (ev) => {
-                    if (ev.key === 'b' || ev.key === 'B') {
-                        // Merge data
-                        await importData(importedData)
-                        location.reload()
-                    }
-                    else if (ev.key === 'o' || ev.key === 'O') {
-                        // Overwrite data
-                        await deleteAllData()
-                        await importData(importedData)
-                        location.reload()
-                    }
-                    document.removeEventListener('keydown', handler)
-                }
-                document.addEventListener('keydown', handler)
-            } catch (error) {
-                console.error('Import error:', error)
-                importText.innerHTML = "Invalid file format. Press any key"
-                const handler = () => location.reload()
-                document.addEventListener('keydown', handler)
-            }
+        const handler = async (ev) => {
+          if (ev.key === "b" || ev.key === "B") {
+            // Merge data
+            await importData(importedData)
+            location.reload()
+          } else if (ev.key === "o" || ev.key === "O") {
+            // Overwrite data
+            await deleteAllData()
+            await importData(importedData)
+            location.reload()
+          }
+          document.removeEventListener("keydown", handler)
         }
-        reader.readAsText(file)
+        document.addEventListener("keydown", handler)
+      } catch (error) {
+        console.error("Import error:", error)
+        importText.innerHTML = "Invalid file format. Press any key"
+        const handler = () => location.reload()
+        document.addEventListener("keydown", handler)
+      }
     }
+    reader.readAsText(file)
+  }
 }
 initDB()

@@ -1,1 +1,610 @@
-<!doctype html><html lang=en><meta charset=UTF-8><meta name=viewport content="width=device-width,initial-scale=1"><title>VocTrainer</title><style>body{background-color:#000;color:#fff;font-family:monospace}strong{color:#00f}h1,p{margin:0}</style><script defer>let db,menu="mm",addstate="key",currentKeyValue="",currentValueValue="",currentTValueValue="",currentRandomKey="";function mkbanner(e,t){const n=t-e.length,l=Math.floor(n/2),a=Math.ceil(n/2);return"-".repeat(l)+e+"-".repeat(a)}function initDB(){const e=indexedDB.open("vocTrainerDB",1);e.onerror=e=>console.log("DB error",e),e.onupgradeneeded=e=>{db=e.target.result,db.objectStoreNames.contains("vocabulary")||db.createObjectStore("vocabulary",{keyPath:"key"})},e.onsuccess=e=>{db=e.target.result,console.log("DB initialized")}}function writeData(e,t){if(!db)return void console.log("DB not initialized yet");const n=db.transaction(["vocabulary"],"readwrite"),l=n.objectStore("vocabulary"),a={key:e,value:t};l.put(a),n.oncomplete=()=>console.log("Data written:",a),n.onerror=e=>console.log("Write error",e)}function getData(e){return new Promise((t,n)=>{if(!db)return void n("DB not initialized");const l=db.transaction(["vocabulary"],"readonly").objectStore("vocabulary").get(e);l.onsuccess=()=>{t(l.result?l.result.value:null)},l.onerror=e=>n(e)})}async function readAllData(){return new Promise((e,t)=>{if(!db)return void t("DB not initialized");const n=db.transaction(["vocabulary"],"readonly").objectStore("vocabulary").getAll();n.onsuccess=()=>e(n.result),n.onerror=e=>t(e)})}document.addEventListener("keydown",async e=>{const t=document.getElementById("selection");if(t.innerText=e.key,t.style.color=["a","t","A","T","-","Enter"].includes(e.key)?"blue":"red","a"!==e.key&&"A"!==e.key||"mm"!==menu){if(("t"===e.key||"T"===e.key)&&"mm"===menu){document.getElementById("mm").style.display="none",document.getElementById("tm").style.display="block",menu="tm";const e=await readAllData();if(e.length>0){const t=Math.floor(Math.random()*e.length);currentRandomKey=e[t].key,document.getElementById("tkey").innerText=currentRandomKey,document.getElementById("tvalue").innerText="???",currentTValueValue=""}else document.getElementById("tkey").innerText="No vocabulary yet!",document.getElementById("tvalue").innerText=""}}else document.getElementById("mm").style.display="none",document.getElementById("am").style.display="block",menu="am",currentKeyValue="",currentValueValue="",document.getElementById("key").innerText="",document.getElementById("valuevalue").innerText="",addstate="key",document.getElementById("value").style.display="none";if("-"===e.key&&("am"===menu?document.getElementById("am").style.display="none":"tm"===menu&&(document.getElementById("tm").style.display="none"),document.getElementById("mm").style.display="block",t.innerText="",menu="mm"),"am"===menu&&("key"===addstate?("Backspace"===e.key?currentKeyValue=currentKeyValue.slice(0,-1):" "===e.key?currentKeyValue+=" ":"Enter"===e.key?(addstate="value",document.getElementById("key").style.color="white",document.getElementById("value").style.display="block",e.preventDefault()):1===e.key.length&&(currentKeyValue+=e.key),document.getElementById("key").innerText=currentKeyValue):"value"===addstate&&("Backspace"===e.key?currentValueValue=currentValueValue.slice(0,-1):" "===e.key?currentValueValue+=" ":"Enter"===e.key?(writeData(currentKeyValue,currentValueValue),currentKeyValue="",currentValueValue="",addstate="key",document.getElementById("key").innerText="",document.getElementById("key").style.color="blue",document.getElementById("value").style.display="none",document.getElementById("valuevalue").innerText="",e.preventDefault()):1===e.key.length&&(currentValueValue+=e.key),document.getElementById("valuevalue").innerText=currentValueValue)),"tm"===menu&&currentRandomKey)if("Enter"===e.key){const t=await getData(currentRandomKey);currentTValueValue.trim()===t?(document.getElementById("tvalue").style.color="green",document.getElementById("tvalue").innerText="Correct!"):(document.getElementById("tvalue").style.color="red",document.getElementById("tvalue").innerText="Incorrect!"),setTimeout(async()=>{const e=await readAllData();if(e.length>0){const t=Math.floor(Math.random()*e.length);currentRandomKey=e[t].key,document.getElementById("tkey").innerText=currentRandomKey,document.getElementById("tvalue").innerText="???",currentTValueValue="",document.getElementById("tvalue").style.color="blue"}},350),e.preventDefault()}else"Backspace"===e.key?(currentTValueValue=currentTValueValue.slice(0,-1),document.getElementById("tvalue").innerText=currentTValueValue||"???"):" "===e.key?(currentTValueValue+=" ",document.getElementById("tvalue").innerText=currentTValueValue):1===e.key.length&&(currentTValueValue+=e.key,document.getElementById("tvalue").innerText=currentTValueValue)}),document.getElementById("vocbanner").innerText=mkbanner("TinyVoc",45),document.getElementById("addbanner").innerText=mkbanner("Add vocabulary",45),document.getElementById("trainbanner").innerText=mkbanner("Train vocabulary",45),document.getElementById("trainfooter").innerText=mkbanner("",45),document.getElementById("vocfooter").innerText=mkbanner("",45),document.getElementById("addfooter").innerText=mkbanner("",45),initDB()</script><div id=mm><p id=vocbanner><p><strong>A</strong>dd vocabulary<p><strong>T</strong>rain vocabulary<p id=vocfooter><p>Your Selection: <strong id=selection></strong></div><div id=am style=display:none><p id=addbanner><p>Press <strong>Enter</strong> to go to the next field<p>Press <strong>-</strong> to save and return to the main menu<p id=addfooter><p>Key: <strong id=key></strong><p id=value>Value: <strong id=valuevalue></strong></div><div id=tm style=display:none><p id=trainbanner><p>Press <strong>Enter</strong> to go to the next field<p>Press <strong>-</strong> to save and return to the main menu<p id=trainfooter><p>Key: <strong id=tkey></strong><p>Value <strong id=tvalue>???</strong></div>
+<!doctypehtml><html lang="en"><meta charset="UTF-8"><meta content="width=device-width,initial-scale=1"name="viewport"><title>TinyVoc</title><style>body{background-color:#000;color:#fff;font-family:monospace}strong{color:#00f}h1,p{margin:0}#file{font-family:system-ui,sans-serif;font-size:.95rem;padding:.4rem;border-radius:6px;color:#0000}#file::file-selector-button{border:none;background:0 0;color:#fff;font-family:monospace;cursor:pointer;transition:background .2s}td{border:1px solid #fff;padding-left:10px;padding-right:10px}#printfooter{display:none;justify-content:center;align-items:center}@media print{#vm p{display:none}#printfooter{display:flex}}</style><div id="mm"><p id="vocbanner"><p><strong>A</strong>dd vocabulary<p><strong>T</strong>rain vocabulary<p><strong>E</strong>xport vocabulary<p id="iv"><strong>I</strong>mport vocabulary</p><input id="file"style="display:none"type="file"><p><strong>V</strong>iew<p><strong>G</strong>enerate List<p id="vocfooter"><p>Your Selection: <strong id="selection"></strong></div><div id="am"style="display:none"><p id="addbanner"><p>Press <strong>Enter</strong> to go to the next field<p>Press <strong>-</strong> to save and return to the main menu<p id="addfooter"><p id="lectiont">Lection: <strong id="lection"></strong><p>Key: <strong id="key"></strong><p id="value">Value: <strong id="valuevalue"></strong></div><div id="tm"style="display:none"><p id="trainbanner"><p>Press <strong>Enter</strong> to go to the next field<p>Press <strong>-</strong> return to the main menu<p id="trainfooter"><p id="tlectiont">Lection: <strong id="tlection"></strong><p>Key: <strong id="tkey"></strong><p>Value <strong id="tvalue">???</strong></div><div id="vm"style="display:none"><p id="viewbanner"><p>Press <strong>-</strong> return to the main menu<p id="viewfooter"><p>Select a lection: <strong id="ilectionSelect"></strong><table><thead><td>Key<td>Value<td>Lection<td>Wrong<td>Right</thead></table><div id="viewElement"></div></div><div class="printfooter"><p id="printfooter"></div><div id="gm"style="display:none"><p id="generateheader"><p>Press <strong>-</strong> return to the main menu<p id="generatefooter"><p>List to transform: <strong id="transformt"></strong><p>Transform action: <strong id="actiont"></strong><p id="param">Param 1: <strong id="paramt"></strong><p id="param2">Param 2: <strong id="param2t"></strong><p id="tsuccses">Transformed into <strong id="ttransto"></strong></div><script>let menu = 'mm'
+let addstate = 'lection'
+let viewstate = 'none'
+let currentKeyValue = ''
+let currentValueValue = ''
+let currentTValueValue = ''
+let currentLectionValue = ''
+let currentTransformValue = ''
+let currentActionValue = ''
+let currentParamValue = ''
+let currentParam2Value = ''
+let selectedLection = ''
+let generateState = 'transform'
+let dataToTrain = []
+let shuffledKeys = []
+let db
+
+document.addEventListener('keydown', async e => {
+  const sel = document.getElementById('selection')
+  sel.innerText = e.key
+    sel.style.color = ['a','t','A','T','e', 'E', 'i', 'I', 'v', 'V', 'g', 'G', '-','Enter'].includes(e.key) ? 'blue' : 'red'
+
+  // MAIN MENU
+  if (menu === 'mm') {
+    if ((e.key === 'a' || e.key === 'A')) {
+      showAddMenu()
+    } else if ((e.key === 't' || e.key === 'T')) {
+      showTrainMenu()
+    } else if ((e.key === 'e' || e.key === 'E')) {
+        download(JSON.stringify(await readAllData()))
+    } else if ((e.key === "i" || e.key === "I")) {
+        getFile()
+    } else if ((e.key === "v" || e.key ===  "V")) {
+        showViewMenu()
+    } else if ((e.key === "g" || e.key === "G")) {
+        showGenerateMenu()
+    }
+  }
+
+  // BACK TO MAIN
+  if (e.key === '-') {
+    hideAddMenu()
+    hideTrainMenu()
+      hideViewMenu()
+      hideGenerateMenu()
+      showMainMenu()
+    sel.innerText = ''
+  }
+
+  // ADD MENU
+  if (menu === 'am') handleAddMenu(e)
+
+  // TRAIN MENU
+  if (menu === 'tm') await handleTrainMenu(e)
+
+    // VIEW MENU
+    if(menu === 'vm') await handleViewMenu(e)
+
+    // GENERATE MENU
+    if (menu === 'gm') handleGenerateMenu(e)
+})
+
+// ——— Menu show/hide helpers ———
+
+function showMainMenu() {
+  document.getElementById('mm').style.display = 'block'
+  menu = 'mm'
+}
+
+function hideAddMenu() {
+  document.getElementById('am').style.display = 'none'
+}
+
+function hideTrainMenu() {
+  document.getElementById('tm').style.display = 'none'
+}
+
+function hideGenerateMenu() {
+    document.getElementById('gm').style.display = 'none'
+}
+
+function showAddMenu() {
+  hideTrainMenu()
+  hideMainMenu()
+    hideGenerateMenu()
+    hideViewMenu()
+  document.getElementById('am').style.display = 'block'
+  menu = 'am'
+  addstate = 'lection'
+  currentLectionValue = ''
+  currentKeyValue = ''
+  currentValueValue = ''
+  document.getElementById('lection').innerText = ''
+  document.getElementById('key').innerText = ''
+  document.getElementById('valuevalue').innerText = ''
+  document.getElementById('value').style.display = 'none'
+}
+
+function showTrainMenu() {
+  hideAddMenu()
+  hideMainMenu()
+    hideGenerateMenu()
+  document.getElementById('tm').style.display = 'block'
+  menu = 'tm'
+  trainInit()
+}
+
+function hideMainMenu() {
+  document.getElementById('mm').style.display = 'none'
+}
+
+function hideViewMenu() {
+    document.getElementById('vm').style.display = 'none'
+}
+
+function showGenerateMenu() {
+    document.getElementById('gm').style.display = 'block'
+    menu = 'gm'
+    hideMainMenu()
+
+    currentTransformValue = ''
+    currentActionValue = ''
+    currentParamValue = ''
+    currentParam2Value = ''
+    generateState = 'transform'
+
+    const transformEl = document.getElementById('transformt')
+    const actionEl = document.getElementById('actiont')
+    const paramEl = document.getElementById('paramt')
+    const param2El = document.getElementById('param2t')
+
+    transformEl.innerText = ''
+    transformEl.style.color = 'blue'
+    actionEl.innerText = ''
+    actionEl.style.color = 'blue'
+    paramEl.innerText = ''
+    paramEl.style.color = 'blue'
+    param2El.innerText = ''
+    param2El.style.color = 'blue'
+}
+
+async function showViewMenu() {
+    hideMainMenu()
+    document.getElementById('vm').style.display = 'block'
+    resetView()
+
+    menu = 'vm'
+    viewstate = 'lection'
+    currentLectionValue = ''
+    const ilectionSelect = document.getElementById('ilectionSelect')
+    ilectionSelect.innerText = ""
+    ilectionSelect.style.color = "blue"
+}
+// ——— View menu logic ---
+
+async function handleViewMenu(e) {
+  if (viewstate === 'lection') {
+    if (e.key === 'Backspace') currentLectionValue = currentLectionValue.slice(0,-1)
+    else if (e.key === 'Enter') {
+      const ilectionSelect = document.getElementById('ilectionSelect')
+      ilectionSelect.style.color = 'white'
+
+      let data
+      if (currentLectionValue.toLowerCase() === 'all') {
+        data = await readAllData()
+      } else {
+        const lections = await readAllLections()
+        if (lections.includes(currentLectionValue)) {
+          data = await readLectionData(currentLectionValue)
+        } else {
+          ilectionSelect.style.color = 'red'
+          return
+        }
+      }
+
+      resetView()
+      data.forEach(element => {
+          addToView(element.key, element.value, element.lection, element.right, element.wrong)
+      })
+
+      viewstate = 'done'
+      e.preventDefault()
+    }
+    else if (e.key.length === 1) currentLectionValue += e.key
+    document.getElementById('ilectionSelect').innerText = currentLectionValue
+  }
+}
+
+// ——— Add menu logic ———
+
+function handleAddMenu(e) {
+  if (addstate === 'lection') {
+    if (e.key === 'Backspace') currentLectionValue = currentLectionValue.slice(0,-1)
+    else if (e.key === 'Enter') {
+      addstate = 'key'
+      document.getElementById('lectiont').style.color = 'white'
+      e.preventDefault()
+    }
+    else if (e.key.length === 1) currentLectionValue += e.key
+    document.getElementById('lection').innerText = currentLectionValue
+  }
+  else if (addstate === 'key') {
+    if (e.key === 'Backspace') currentKeyValue = currentKeyValue.slice(0,-1)
+    else if (e.key === 'Enter') {
+      addstate = 'value'
+      document.getElementById('key').style.color = 'white'
+      document.getElementById('value').style.display = 'block'
+      e.preventDefault()
+    }
+    else if (e.key.length === 1) currentKeyValue += e.key
+    document.getElementById('key').innerText = currentKeyValue
+  }
+  else if (addstate === 'value') {
+    if (e.key === 'Backspace') currentValueValue = currentValueValue.slice(0,-1)
+    else if (e.key === 'Enter') {
+      writeData(currentKeyValue, currentValueValue, currentLectionValue)
+      currentKeyValue = ''
+      currentValueValue = ''
+      addstate = 'key'
+      document.getElementById('key').innerText = ''
+      document.getElementById('key').style.color = 'blue'
+      document.getElementById('value').style.display = 'none'
+      document.getElementById('valuevalue').innerText = ''
+      e.preventDefault()
+    }
+    else if (e.key.length === 1) currentValueValue += e.key
+    document.getElementById('valuevalue').innerText = currentValueValue
+  }
+}
+
+// --- Generate menu logic ---
+async function handleGenerateMenu(e) {
+  const transformEl = document.getElementById('transformt')
+  const actionEl = document.getElementById('actiont')
+  const paramEl = document.getElementById('paramt')
+  const param2El = document.getElementById('param2t')
+
+  if (generateState === 'transform') {
+    if (e.key === 'Backspace') currentTransformValue = currentTransformValue.slice(0, -1)
+    else if (e.key === 'Enter') {
+      const lections = await readAllLections()
+      if (lections.includes(currentTransformValue)) {
+        transformEl.style.color = 'white'
+        generateState = 'action'
+      } else {
+        transformEl.style.color = 'red'
+      }
+      e.preventDefault()
+    }
+    else if (e.key.length === 1) currentTransformValue += e.key
+    transformEl.innerText = currentTransformValue
+  }
+
+  else if (generateState === 'action') {
+    if (e.key === 'Backspace') currentActionValue = currentActionValue.slice(0, -1)
+    else if (e.key === 'Enter') {
+      const lections = await readAllLections()
+        if (!isNaN(currentActionValue) && currentActionValue == 1) {
+        actionEl.style.color = 'white'
+        // Set labels and placeholders (make sure these exist in your HTML)
+        document.getElementById('param').innerHTML = 'higher than: </strong id="paramt"></strong>'
+        document.getElementById('param2').innerHTML = 'result length: </strong id="param2t"></strong>'
+        generateState = 'param'
+      } else {
+        actionEl.style.color = 'red'
+      }
+      e.preventDefault()
+    }
+    else if (e.key.length === 1) currentActionValue += e.key
+    actionEl.innerText = currentActionValue
+  }
+
+  else if (generateState === 'param') {
+    if (e.key === 'Backspace') currentParamValue = currentParamValue.slice(0, -1)
+    else if (e.key === 'Enter') {
+      paramEl.style.color = 'white'
+      generateState = 'param2'
+      e.preventDefault()
+    }
+    else if (e.key.length === 1) currentParamValue += e.key
+    paramEl.innerText = currentParamValue
+  }
+
+  else if (generateState === 'param2') {
+    if (e.key === 'Backspace') currentParam2Value = currentParam2Value.slice(0, -1)
+    else if (e.key === 'Enter') {
+      param2El.style.color = 'white'
+      e.preventDefault()
+
+      const minWrong = parseInt(currentParamValue)
+      const maxLength = parseInt(currentParam2Value)
+
+      let arr = await readLectionData(currentActionValue)
+
+      arr = arr.filter(item => item.wrong > minWrong)
+
+      arr.sort((a, b) => b.wrong - a.wrong)
+
+      arr = arr.slice(0, maxLength)
+
+      let newLection = currentTransformValue
+      const lections = await readAllLections()
+      while (lections.includes(newLection)) {
+        newLection += 't'
+      }
+
+      arr.forEach(item => {
+        writeData(item.key, item.value, newLection)
+      })
+
+      console.log('Original list:', currentActionValue)
+      console.log('New list:', newLection)
+      console.log('Filtered entries:', arr)
+
+    }
+    else if (e.key.length === 1) currentParam2Value += e.key
+    param2El.innerText = currentParam2Value
+  }
+}
+
+// ——— Train menu logic ———
+
+let trainstate = 'lection'
+async function trainInit() {
+  trainstate = 'lection'
+  currentLectionValue = ''
+  selectedLection = ''
+  document.getElementById('tlection').innerText = ''
+  document.getElementById('tlectiont').style.color = 'white'
+  document.getElementById('tkey').innerText = ''
+  document.getElementById('tvalue').innerText = '???'
+  document.getElementById('trainfooter').innerText = mkbanner('0/0',45)
+}
+
+async function handleTrainMenu(e) {
+  if (trainstate === 'lection') {
+    if (e.key === 'Backspace') currentLectionValue = currentLectionValue.slice(0,-1)
+    else if (e.key === 'Enter') {
+      const lections = await readAllLections()
+      if (lections.includes(currentLectionValue)) {
+        selectedLection = currentLectionValue
+        document.getElementById('tlection').style.color = 'white'
+        document.getElementById('tlection').innerText = selectedLection
+        dataToTrain = await readLectionData(selectedLection)
+        shuffledKeys = dataToTrain.map(x=>x.key).sort(()=>Math.random()-.5)
+        trainstate = 'quiz'
+        nextQuestion()
+      } else {
+        document.getElementById('tlection').style.color = 'red'
+      }
+      e.preventDefault()
+    }
+    else if (e.key.length === 1) currentLectionValue += e.key
+    document.getElementById('tlection').innerText = currentLectionValue
+  }
+  else if (trainstate === 'quiz') {
+    if (e.key === 'Backspace') currentTValueValue = currentTValueValue.slice(0,-1)
+    else if (e.key === 'Enter') {
+      await checkAnswer()
+      e.preventDefault()
+    }
+    else if (e.key.length===1||e.key===' ') currentTValueValue += e.key
+    document.getElementById('tvalue').innerText = currentTValueValue||'???'
+  }
+}
+
+function nextQuestion() {
+  if (!shuffledKeys.length) {
+    document.getElementById('trainfooter').innerText = mkbanner('Finished!',45)
+    document.getElementById('tkey').innerText = ''
+    document.getElementById('tvalue').innerText = ''
+    return
+  }
+  const key = shuffledKeys.pop()
+  currentTValueValue = ''
+  document.getElementById('tkey').innerText = key
+  document.getElementById('tvalue').innerText = '???'
+  const done = dataToTrain.length - shuffledKeys.length
+  document.getElementById('trainfooter').innerText = mkbanner(`${done}/${dataToTrain.length}`,45)
+}
+
+async function checkAnswer() {
+    const key = document.getElementById('tkey').innerText
+    const correctValue = await getData(key)
+    const tval = currentTValueValue.trim()
+    const tvElt = document.getElementById('tvalue')
+    const isCorrect = tval === correctValue
+
+    // Show color feedback
+    tvElt.style.color = isCorrect ? 'green' : 'red'
+
+    // Update stats
+    const tx = db.transaction('vocabulary', 'readwrite')
+    const store = tx.objectStore('vocabulary')
+    const rq = store.get(key)
+    rq.onsuccess = () => {
+        const data = rq.result
+        if (!data) return
+        if (isCorrect) {
+            data.right = (data.right || 0) + 1
+            data.weight = Math.max(1, (data.weight || 1) - 1)
+        } else {
+            data.wrong = (data.wrong || 0) + 1
+            data.weight = (data.weight || 1) + 1
+        }
+        store.put(data)
+    }
+    setTimeout(() => {
+        tvElt.style.color = 'blue'
+        if (!isCorrect) {
+            shuffledKeys.push(key)
+            shuffledKeys.sort(() => Math.random() - .5)
+        }
+        nextQuestion()
+    }, 500)
+}
+
+// ——— Banner init ———
+
+function mkbanner(text,width) {
+  const pad = width - text.length
+  const l = Math.floor(pad/2), r = Math.ceil(pad/2)
+  return '-'.repeat(l) + text + '-'.repeat(r)
+}
+
+document.getElementById('vocbanner').innerText = mkbanner('TinyVoc', 45)
+document.getElementById('addbanner').innerText = mkbanner('Add vocabulary', 45)
+document.getElementById('trainbanner').innerText = mkbanner('Train vocabulary', 45)
+document.getElementById('viewbanner').innerText = mkbanner('View vocabulary', 45)
+document.getElementById('printfooter').innerText = mkbanner('Generated by TinyVoc', 50)
+document.getElementById('generateheader').innerText = mkbanner('Generate List', 45)
+document.getElementById('vocfooter').innerText = mkbanner('', 45)
+document.getElementById('addfooter').innerText = mkbanner('', 45)
+document.getElementById('viewfooter').innerText = mkbanner('', 45)
+document.getElementById('generatefooter').innerText = mkbanner('', 45)
+document.getElementById('trainfooter').innerText = mkbanner('0/0', 45)
+
+// ——— IndexedDB & data helpers ———
+
+function initDB() {
+  const req = indexedDB.open('vocTrainerDB',1)
+  req.onupgradeneeded = e=>{
+    db = e.target.result
+    if (!db.objectStoreNames.contains('vocabulary')) {
+      db.createObjectStore('vocabulary',{ keyPath:'key' })
+    }
+  }
+  req.onsuccess = e=>{ db = e.target.result }
+  req.onerror = e=>console.log('DB error',e)
+}
+
+function writeData(key,value,lection) {
+  if (!db) return
+  const tx = db.transaction('vocabulary','readwrite')
+  const store = tx.objectStore('vocabulary')
+  store.put({
+      key,
+      value,
+      lection,
+      weight: 1,
+      wrong: 0,
+      right: 0
+  })
+}
+
+function getData(key) {
+  return new Promise((res,rej)=>{
+    if (!db) return rej()
+    const tx = db.transaction('vocabulary','readonly')
+    const store = tx.objectStore('vocabulary')
+    const rq = store.get(key)
+    rq.onsuccess = ()=>res(rq.result?.value||'')
+    rq.onerror = ()=>rej()
+  })
+}
+
+function readAllData() {
+  return new Promise((res,rej)=>{
+    if (!db) return rej()
+    const tx = db.transaction('vocabulary','readonly')
+    const store = tx.objectStore('vocabulary')
+    const rq = store.getAll()
+    rq.onsuccess = ()=>res(rq.result)
+    rq.onerror = ()=>rej()
+  })
+}
+
+async function readAllLections() {
+  const all = await readAllData()
+  return [...new Set(all.map(x=>x.lection))]
+}
+
+async function readLectionData(lection) {
+  const all = await readAllData()
+  return all.filter(x=>x.lection===lection)
+}
+
+function deleteAllData() {
+    return new Promise((res, rej) => {
+        if (!db) return rej()
+        const tx = db.transaction('vocabulary', 'readwrite')
+        const store = tx.objectStore('vocabulary')
+        const rq = store.clear()
+        rq.onsuccess = () => res()
+        rq.onerror = () => rej(rq.error)
+    })
+}
+
+function importData(data) {
+    return new Promise((resolve, reject) => {
+        if (!db) return reject('Database not available')
+        const tx = db.transaction('vocabulary', 'readwrite')
+        const store = tx.objectStore('vocabulary')
+
+        data.forEach(item => {
+            store.put(item)
+        })
+
+        tx.oncomplete = () => resolve()
+        tx.onerror = (e) => reject(e.target.error)
+    })
+}
+
+function download(content) {
+    const blob = new Blob([content], { type: "text/plain" })
+    const url = URL.createObjectURL(blob)
+
+    const a = document.createElement("a")
+    a.href = url
+    a.download = "voc.tiny"
+    document.body.appendChild(a)
+    a.click()
+    document.body.removeChild(a)
+    URL.revokeObjectURL(url)
+}
+
+// View Helpers
+function resetView() {
+    document.getElementById("viewElement").innerHTML = ""
+}
+
+function addToView(key, value, lection, right, wrong) {
+    const viewElement = document.getElementById("viewElement")
+    const tr = document.createElement("tr")
+    const tdKey = document.createElement("td")
+    const tdValue = document.createElement("td")
+    const tdWrong = document.createElement("td")
+    const tdRight = document.createElement("td")
+    const tdLection = document.createElement("td")
+
+    tdKey.innerText = key
+    tdValue.innerText = value
+    tdLection.innerText = lection
+    tdWrong.innerText = wrong
+    tdRight.innerText = right
+
+    tr.appendChild(tdKey)
+    tr.appendChild(tdValue)
+    tr.appendChild(tdLection)
+    tr.appendChild(tdWrong)
+    tr.appendChild(tdRight)
+
+    viewElement.appendChild(tr)
+}
+
+function getFile() {
+    const fileInput = document.getElementById("file")
+    const importText = document.getElementById("iv")
+    importText.style.display = "none"
+    fileInput.style.display = "block"
+
+    fileInput.onchange = () => {
+        const file = fileInput.files[0]
+        if (!file) return
+
+        const reader = new FileReader()
+        reader.onload = async (e) => {
+            try {
+                const importedData = JSON.parse(e.target.result)
+
+                fileInput.style.display = "none"
+                importText.style.display = "block"
+                importText.innerHTML = "Do you want to add <strong>(b)</strong> it or overwrite <strong>(o)</strong>?"
+
+                const handler = async (ev) => {
+                    if (ev.key === 'b' || ev.key === 'B') {
+                        // Merge data
+                        await importData(importedData)
+                        location.reload()
+                    }
+                    else if (ev.key === 'o' || ev.key === 'O') {
+                        // Overwrite data
+                        await deleteAllData()
+                        await importData(importedData)
+                        location.reload()
+                    }
+                    document.removeEventListener('keydown', handler)
+                }
+                document.addEventListener('keydown', handler)
+            } catch (error) {
+                console.error('Import error:', error)
+                importText.innerHTML = "Invalid file format. Press any key"
+                const handler = () => location.reload()
+                document.addEventListener('keydown', handler)
+            }
+        }
+        reader.readAsText(file)
+    }
+}
+initDB()</script>
