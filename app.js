@@ -564,7 +564,6 @@ async function handleTrainMenu(e) {
     document.getElementById("tvalue").innerText = currentTValueValue || "???"
   } else if (trainstate === "showingSolution") {
     if (e.key === "Enter") {
-      shuffledKeys.pop()
       trainstate = "quiz"
       nextQuestion()
       e.preventDefault()
@@ -684,13 +683,18 @@ async function checkAnswer() {
 
     if (currentAttempts + 1 >= 3) {
       trainstate = "showingSolution"
+      currentTValueValue = correctValue
       tvElt.innerText = correctValue
       tvElt.style.color = "yellow"
-      document.getElementById("trainfooter").innerText = mkbanner(
-        correctValue,
-        45,
-      )
       wrongAttempts.delete(key)
+      shuffledKeys.pop()
+
+      if (shuffledKeys.length > 3) {
+        const insertPosition = Math.floor(shuffledKeys.length * 0.3)
+        shuffledKeys.splice(insertPosition, 0, key)
+      } else {
+        shuffledKeys.unshift(key)
+      }
     } else {
       setTimeout(() => {
         tvElt.style.color = "blue"
