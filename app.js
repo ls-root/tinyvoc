@@ -231,7 +231,6 @@ function showGenerateMenu() {
   param2El.innerText = ""
   param2El.style.color = "blue"
 }
-
 async function showViewMenu() {
   hideMainMenu()
   document.getElementById("vm").style.display = "block"
@@ -244,6 +243,7 @@ async function showViewMenu() {
   ilectionSelect.innerText = ""
   ilectionSelect.style.color = "blue"
 }
+
 // ——— View menu logic ---
 
 async function handleViewMenu(e) {
@@ -268,9 +268,11 @@ async function handleViewMenu(e) {
       }
 
       resetView()
+      // Sort by id (insertion order) for view
+      data.sort((a, b) => a.id - b.id)
       data.forEach((element) => {
         addToView(
-          element.key,
+          element.vocabWord, // Changed from element.key
           element.value,
           element.lection,
           element.right,
@@ -543,7 +545,7 @@ async function handleTrainMenu(e) {
         document.getElementById("tlection").innerText = selectedLection
         dataToTrain = await readLectionData(selectedLection)
         shuffledKeys = dataToTrain
-          .map((x) => x.key)
+          .map((x) => x.vocabWord) // Use vocabWord field
           .sort(() => Math.random() - 0.5)
         wrongAttempts.clear()
         trainstate = "quiz"
@@ -565,6 +567,8 @@ async function handleTrainMenu(e) {
   } else if (trainstate === "showingSolution") {
     if (e.key === "Enter") {
       trainstate = "quiz"
+      currentTValueValue = "" // Reset input
+      document.getElementById("tvalue").style.color = "blue"
       nextQuestion()
       e.preventDefault()
     }
@@ -581,7 +585,6 @@ async function nextQuestion() {
     document.getElementById("tkey").innerText = ""
     document.getElementById("tvalue").innerText = ""
 
-    // Show statistics
     document.getElementById("stats").style.display = "block"
     document.getElementById("nstats").style.display = "none"
 
@@ -600,18 +603,20 @@ async function nextQuestion() {
 
     return
   }
-  const key = shuffledKeys[shuffledKeys.length - 1]
-  currentKey = key
+  const vocabWord = shuffledKeys[shuffledKeys.length - 1]
+  currentKey = vocabWord
   currentTValueValue = ""
 
   const tx = db.transaction("vocabulary", "readonly")
   const store = tx.objectStore("vocabulary")
-  const rq = store.get(key)
+  const index = store.index("vocabWord")
+  const rq = index.get(vocabWord)
   rq.onsuccess = () => {
     const data = rq.result
     const wrong = data?.wrong || 0
     const right = data?.right || 0
-    document.getElementById("tkey").innerText = `${key} (${wrong},${right})`
+    document.getElementById("tkey").innerText =
+      `${vocabWord} (${wrong},${right})`
   }
 
   document.getElementById("tvalue").innerText = "???"
@@ -624,8 +629,8 @@ async function nextQuestion() {
 }
 
 async function checkAnswer() {
-  const key = currentKey
-  const correctValue = await getData(key)
+  const vocabWord = currentKey
+  const correctValue = await getData(vocabWord)
   const tval = currentTValueValue.trim()
   const tvElt = document.getElementById("tvalue")
 
@@ -648,9 +653,11 @@ async function checkAnswer() {
 
   tvElt.style.color = isCorrect ? "green" : "red"
 
+  // Update database stats
   const tx = db.transaction("vocabulary", "readwrite")
   const store = tx.objectStore("vocabulary")
-  const rq = store.get(key)
+  const index = store.index("vocabWord")
+  const rq = index.get(vocabWord)
   rq.onsuccess = () => {
     const data = rq.result
     if (!data) return
@@ -666,36 +673,46 @@ async function checkAnswer() {
 
   if (isCorrect) {
     trainStats.totalCorrect++
-    wrongAttempts.delete(key)
-    shuffledKeys.pop()
+    wrongAttempts.delete(vocabWord)
+    shuffledKeys.pop() // Remove current word
     setTimeout(() => {
       tvElt.style.color = "blue"
       nextQuestion()
     }, 500)
   } else {
     trainStats.totalWrong++
-    const currentAttempts = wrongAttempts.get(key) || 0
-    wrongAttempts.set(key, currentAttempts + 1)
+    const currentAttempts = wrongAttempts.get(vocabWord) || 0
+    wrongAttempts.set(vocabWord, currentAttempts + 1)
 
     if (currentAttempts + 1 > trainStats.hardestWord.attempts) {
-      trainStats.hardestWord = { key: key, attempts: currentAttempts + 1 }
+      trainStats.hardestWord = { key: vocabWord, attempts: currentAttempts + 1 }
     }
 
     if (currentAttempts + 1 >= 3) {
+      // Show solution after 3 wrong attempts
       trainstate = "showingSolution"
-      currentTValueValue = correctValue
+      currentTValueValue = correctValue // Put correct answer in input
       tvElt.innerText = correctValue
       tvElt.style.color = "yellow"
-      wrongAttempts.delete(key)
-      shuffledKeys.pop()
+      document.getElementById("trainfooter").innerText = mkbanner(
+        "Press Enter to continue",
+        45,
+        "-",
+      )
 
+      // Remove from current position and add back later
+      wrongAttempts.delete(vocabWord)
+      shuffledKeys.pop() // Remove current word
+
+      // Insert word to be asked later (about 30% through remaining questions)
       if (shuffledKeys.length > 3) {
         const insertPosition = Math.floor(shuffledKeys.length * 0.3)
-        shuffledKeys.splice(insertPosition, 0, key)
-      } else {
-        shuffledKeys.unshift(key)
+        shuffledKeys.splice(insertPosition, 0, vocabWord)
+      } else if (shuffledKeys.length > 0) {
+        shuffledKeys.unshift(vocabWord) // Add to beginning if few questions remain
       }
     } else {
+      // Wrong but less than 3 attempts - try again
       setTimeout(() => {
         tvElt.style.color = "blue"
         currentTValueValue = ""
@@ -764,12 +781,21 @@ document.getElementById("lectionviewfooter").innerText = mkbanner("", 45, "-")
 // ——— IndexedDB & data helpers ———
 
 function initDB() {
-  const req = indexedDB.open("vocTrainerDB", 2)
+  const req = indexedDB.open("vocTrainerDB", 3)
   req.onupgradeneeded = (e) => {
     db = e.target.result
-    if (!db.objectStoreNames.contains("vocabulary")) {
-      db.createObjectStore("vocabulary", { keyPath: "key" })
+
+    if (db.objectStoreNames.contains("vocabulary")) {
+      db.deleteObjectStore("vocabulary")
     }
+
+    const vocabStore = db.createObjectStore("vocabulary", {
+      keyPath: "id",
+      autoIncrement: true,
+    })
+
+    vocabStore.createIndex("vocabWord", "vocabWord", { unique: true })
+
     if (!db.objectStoreNames.contains("config")) {
       db.createObjectStore("config", { keyPath: "key" })
     }
@@ -785,26 +811,28 @@ function initDB() {
   req.onerror = (e) => console.log("DB error", e)
 }
 
-function writeData(key, value, lection) {
+function writeData(vocabWord, value, lection) {
   if (!db) return
   const tx = db.transaction("vocabulary", "readwrite")
   const store = tx.objectStore("vocabulary")
   store.put({
-    key,
+    vocabWord,
     value,
     lection,
     weight: 1,
     wrong: 0,
     right: 0,
+    // id will be auto-generated
   })
 }
 
-function getData(key) {
+function getData(vocabWord) {
   return new Promise((res, rej) => {
     if (!db) return rej()
     const tx = db.transaction("vocabulary", "readonly")
     const store = tx.objectStore("vocabulary")
-    const rq = store.get(key)
+    const index = store.index("vocabWord")
+    const rq = index.get(vocabWord)
     rq.onsuccess = () => res(rq.result?.value || "")
     rq.onerror = () => rej()
   })
@@ -821,14 +849,14 @@ function readAllData() {
   })
 }
 
-async function readAllLections() {
-  const all = await readAllData()
-  return [...new Set(all.map((x) => x.lection))]
-}
-
 async function readLectionData(lection) {
   const all = await readAllData()
   return all.filter((x) => x.lection === lection)
+}
+
+async function readAllLections() {
+  const all = await readAllData()
+  return [...new Set(all.map((x) => x.lection))]
 }
 
 function deleteAllData() {
