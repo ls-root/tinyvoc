@@ -9,12 +9,24 @@ let currentTransformValue = ""
 let currentActionValue = ""
 let currentParamValue = ""
 let currentParam2Value = ""
+let currentSourceValue = ""
+let currentDestinationValue = ""
 let selectedLection = ""
 let generateState = "transform"
+let moveState = "source"
 let dataToTrain = []
 let shuffledKeys = []
+let uniqueKeyChar = " "
+let trainstate = "lection"
+let wrongAttempts = new Map()
+let currentKey = ""
 let db
 let AvabialeModes = Array.from({ length: 5 }, (e, i) => i)
+let trainStats = {
+  totalCorrect: 0,
+  totalWrong: 0,
+  hardestWord: { key: "", attempts: 0 },
+}
 let GenerateModesDescription = {
   0: "Sort",
   1: "Reverse",
@@ -31,6 +43,10 @@ let GenerateModesParams = {
 }
 
 document.addEventListener("keydown", async (e) => {
+  // Prevent firefox from starting Quick Search with /
+  if (e.key === "/") {
+    e.preventDefault()
+  }
   const sel = document.getElementById("selection")
   sel.innerText = e.key
   sel.style.color = [
@@ -46,6 +62,10 @@ document.addEventListener("keydown", async (e) => {
     "V",
     "g",
     "G",
+    "m",
+    "M",
+    "l",
+    "L",
     "-",
     "Enter",
   ].includes(e.key)
@@ -66,6 +86,10 @@ document.addEventListener("keydown", async (e) => {
       showViewMenu()
     } else if (e.key === "g" || e.key === "G") {
       showGenerateMenu()
+    } else if (e.key === "m" || e.key === "M") {
+      showMoveMenu()
+    } else if (e.key === "l" || e.key === "L") {
+      showLectionsMenu()
     }
   }
 
@@ -75,6 +99,8 @@ document.addEventListener("keydown", async (e) => {
     hideTrainMenu()
     hideViewMenu()
     hideGenerateMenu()
+    hideMoveMenu()
+    hideLectionsMenu()
     showMainMenu()
     sel.innerText = ""
   }
@@ -90,6 +116,9 @@ document.addEventListener("keydown", async (e) => {
 
   // GENERATE MENU
   if (menu === "gm") handleGenerateMenu(e)
+
+  // MOVE MENU
+  if (menu === "mvm") handleMoveMenu(e)
 })
 
 // ——— Menu show/hide helpers ———
@@ -111,11 +140,20 @@ function hideGenerateMenu() {
   document.getElementById("gm").style.display = "none"
 }
 
+function hideLectionsMenu() {
+  document.getElementById("lm").style.display = "none"
+}
+
+function hideMoveMenu() {
+  document.getElementById("mvm").style.display = "none"
+}
+
 function showAddMenu() {
   hideTrainMenu()
   hideMainMenu()
   hideGenerateMenu()
   hideViewMenu()
+  hideMoveMenu()
   document.getElementById("am").style.display = "block"
   menu = "am"
   addstate = "lection"
@@ -128,6 +166,20 @@ function showAddMenu() {
   document.getElementById("value").style.display = "none"
 }
 
+async function showLectionsMenu() {
+  document.getElementById("lm").style.display = "block"
+  hideMainMenu()
+  // Render articles
+  document.getElementById("lectionview").innerHTML = ""
+  const lections = await readAllLections()
+  lections.forEach((item) => {
+    const p = document.createElement("p")
+    p.innerText = item
+    document.getElementById("lectionview").appendChild(p)
+  })
+  menu = "lm"
+}
+
 function showTrainMenu() {
   hideAddMenu()
   hideMainMenu()
@@ -135,6 +187,15 @@ function showTrainMenu() {
   document.getElementById("tm").style.display = "block"
   menu = "tm"
   trainInit()
+}
+
+function showMoveMenu() {
+  hideTrainMenu()
+  hideAddMenu()
+  hideGenerateMenu()
+  hideMainMenu()
+  document.getElementById("mvm").style.display = "block"
+  menu = "mvm"
 }
 
 function hideMainMenu() {
@@ -404,18 +465,70 @@ async function GenerateList(action, param, param2, lection) {
   return result
 }
 
+// --- Move menu logic ---
+async function handleMoveMenu(e) {
+  const sourceEl = document.getElementById("tsource")
+  const destinationEl = document.getElementById("tdest")
+
+  if (moveState === "source") {
+    if (e.key === "Backspace") {
+      currentSourceValue = currentSourceValue.slice(0, -1)
+    } else if (e.key === "Enter") {
+      const lections = await readAllLections()
+      if (lections.includes(currentSourceValue)) {
+        sourceEl.style.color = "white"
+        moveState = "destination"
+      } else {
+        sourceEl.style.color = "red"
+      }
+    } else if (e.key.length === 1) {
+      currentSourceValue += e.key
+    }
+  } else if (moveState === "destination") {
+    if (e.key === "Backspace") {
+      currentDestinationValue = currentDestinationValue.slice(0, -1)
+    } else if (e.key === "Enter") {
+      destinationEl.style.color = "white"
+      moveState = ""
+
+      // IDK if this is really "prettier"
+      document.getElementById("msuc").innerHTML =
+        "Moved <strong>" +
+        currentSourceValue +
+        "</strong> -> <strong>" +
+        currentDestinationValue +
+        "</strong>"
+
+      await renameLection(currentSourceValue, currentDestinationValue)
+    } else if (e.key.length === 1) {
+      currentDestinationValue += e.key
+    }
+  }
+  destinationEl.innerText = currentDestinationValue
+  sourceEl.innerText = currentSourceValue
+}
+
 // ——— Train menu logic ———
 
-let trainstate = "lection"
 async function trainInit() {
   trainstate = "lection"
   currentLectionValue = ""
   selectedLection = ""
+  wrongAttempts.clear()
+  currentKey = ""
+  trainStats = {
+    totalCorrect: 0,
+    totalWrong: 0,
+    hardestWord: { key: "", attempts: 0 },
+  }
   document.getElementById("tlection").innerText = ""
   document.getElementById("tlectiont").style.color = "white"
   document.getElementById("tkey").innerText = ""
+  document.getElementById("tkey").style.color = "blue"
   document.getElementById("tvalue").innerText = "???"
-  document.getElementById("trainfooter").innerText = mkbanner("0/0", 45)
+  document.getElementById("trainfooter").innerText = mkbanner("0/0", 45, "-")
+  document.getElementById("stats").style.display = "none"
+  document.getElementById("nstats").style.display = "block"
 }
 
 async function handleTrainMenu(e) {
@@ -432,6 +545,7 @@ async function handleTrainMenu(e) {
         shuffledKeys = dataToTrain
           .map((x) => x.key)
           .sort(() => Math.random() - 0.5)
+        wrongAttempts.clear()
         trainstate = "quiz"
         nextQuestion()
       } else {
@@ -448,38 +562,93 @@ async function handleTrainMenu(e) {
       e.preventDefault()
     } else if (e.key.length === 1 || e.key === " ") currentTValueValue += e.key
     document.getElementById("tvalue").innerText = currentTValueValue || "???"
+  } else if (trainstate === "showingSolution") {
+    if (e.key === "Enter") {
+      shuffledKeys.pop()
+      trainstate = "quiz"
+      nextQuestion()
+      e.preventDefault()
+    }
   }
 }
 
-function nextQuestion() {
+async function nextQuestion() {
   if (!shuffledKeys.length) {
-    document.getElementById("trainfooter").innerText = mkbanner("Finished!", 45)
+    document.getElementById("trainfooter").innerText = mkbanner(
+      "Finished!",
+      45,
+      "-",
+    )
     document.getElementById("tkey").innerText = ""
     document.getElementById("tvalue").innerText = ""
+
+    // Show statistics
+    document.getElementById("stats").style.display = "block"
+    document.getElementById("nstats").style.display = "none"
+
+    document.getElementById("s1").innerText = trainStats.totalCorrect
+    document.getElementById("s2").innerText = trainStats.totalWrong
+    document.getElementById("s3").innerText = trainStats.hardestWord.key
+    document.getElementById("s4").innerText = trainStats.hardestWord.attempts
+
+    console.log("=== Training Statistics ===")
+    console.log(`Total Correct: ${trainStats.totalCorrect}`)
+    console.log(`Total Wrong: ${trainStats.totalWrong}`)
+    console.log(
+      `Hardest Word: "${trainStats.hardestWord.key}" (${trainStats.hardestWord.attempts} wrong attempts)`,
+    )
+    console.log("===========================")
+
     return
   }
-  const key = shuffledKeys.pop()
+  const key = shuffledKeys[shuffledKeys.length - 1]
+  currentKey = key
   currentTValueValue = ""
-  document.getElementById("tkey").innerText = key
+
+  const tx = db.transaction("vocabulary", "readonly")
+  const store = tx.objectStore("vocabulary")
+  const rq = store.get(key)
+  rq.onsuccess = () => {
+    const data = rq.result
+    const wrong = data?.wrong || 0
+    const right = data?.right || 0
+    document.getElementById("tkey").innerText = `${key} (${wrong},${right})`
+  }
+
   document.getElementById("tvalue").innerText = "???"
   const done = dataToTrain.length - shuffledKeys.length
   document.getElementById("trainfooter").innerText = mkbanner(
     `${done}/${dataToTrain.length}`,
     45,
+    "-",
   )
 }
 
 async function checkAnswer() {
-  const key = document.getElementById("tkey").innerText
+  const key = currentKey
   const correctValue = await getData(key)
   const tval = currentTValueValue.trim()
   const tvElt = document.getElementById("tvalue")
-  const isCorrect = tval === correctValue
 
-  // Show color feedback
+  let isCorrect = false
+  if (correctValue.includes(",")) {
+    const correctParts = correctValue
+      .split(",")
+      .map((part) => part.trim().toLowerCase())
+      .sort()
+    const userParts = tval
+      .split(",")
+      .map((part) => part.trim().toLowerCase())
+      .sort()
+    isCorrect =
+      correctParts.length === userParts.length &&
+      correctParts.every((part, index) => part === userParts[index])
+  } else {
+    isCorrect = tval.toLowerCase() === correctValue.toLowerCase()
+  }
+
   tvElt.style.color = isCorrect ? "green" : "red"
 
-  // Update stats
   const tx = db.transaction("vocabulary", "readwrite")
   const store = tx.objectStore("vocabulary")
   const rq = store.get(key)
@@ -495,61 +664,119 @@ async function checkAnswer() {
     }
     store.put(data)
   }
-  setTimeout(() => {
-    tvElt.style.color = "blue"
-    if (!isCorrect) {
-      shuffledKeys.push(key)
-      shuffledKeys.sort(() => Math.random() - 0.5)
+
+  if (isCorrect) {
+    trainStats.totalCorrect++
+    wrongAttempts.delete(key)
+    shuffledKeys.pop()
+    setTimeout(() => {
+      tvElt.style.color = "blue"
+      nextQuestion()
+    }, 500)
+  } else {
+    trainStats.totalWrong++
+    const currentAttempts = wrongAttempts.get(key) || 0
+    wrongAttempts.set(key, currentAttempts + 1)
+
+    if (currentAttempts + 1 > trainStats.hardestWord.attempts) {
+      trainStats.hardestWord = { key: key, attempts: currentAttempts + 1 }
     }
-    nextQuestion()
-  }, 500)
+
+    if (currentAttempts + 1 >= 3) {
+      trainstate = "showingSolution"
+      tvElt.innerText = correctValue
+      tvElt.style.color = "yellow"
+      document.getElementById("trainfooter").innerText = mkbanner(
+        correctValue,
+        45,
+      )
+      wrongAttempts.delete(key)
+    } else {
+      setTimeout(() => {
+        tvElt.style.color = "blue"
+        currentTValueValue = ""
+        tvElt.innerText = "???"
+      }, 500)
+    }
+  }
 }
 
 // ——— Banner init ———
 
-function mkbanner(text, width) {
+function mkbanner(text, width, sep) {
   const pad = width - text.length
   const l = Math.floor(pad / 2),
     r = Math.ceil(pad / 2)
-  return "-".repeat(l) + text + "-".repeat(r)
+  return sep.repeat(l) + text + sep.repeat(r)
 }
 
-document.getElementById("vocbanner").innerText = mkbanner("TinyVoc", 45)
-document.getElementById("addbanner").innerText = mkbanner("Add vocabulary", 45)
+document.getElementById("statsbanner").innerText = mkbanner(
+  "Training Statistics",
+  30,
+  "=",
+)
+document.getElementById("statsfooter").innerText = mkbanner("", 30, "=")
+document.getElementById("vocbanner").innerText = mkbanner("TinyVoc", 45, "-")
+document.getElementById("addbanner").innerText = mkbanner(
+  "Add vocabulary",
+  45,
+  "-",
+)
+// IDK if this is really "prettier"
 document.getElementById("trainbanner").innerText = mkbanner(
   "Train vocabulary",
   45,
+  "-",
 )
 document.getElementById("viewbanner").innerText = mkbanner(
   "View vocabulary",
   45,
+  "-",
 )
 document.getElementById("printfooter").innerText = mkbanner(
   "Generated by TinyVoc",
   50,
+  "-",
 )
 document.getElementById("generateheader").innerText = mkbanner(
   "Generate List",
   45,
+  "-",
 )
-document.getElementById("vocfooter").innerText = mkbanner("", 45)
-document.getElementById("addfooter").innerText = mkbanner("", 45)
-document.getElementById("viewfooter").innerText = mkbanner("", 45)
-document.getElementById("generatefooter").innerText = mkbanner("", 45)
-document.getElementById("trainfooter").innerText = mkbanner("0/0", 45)
+document.getElementById("lectionviewheader").innerText = mkbanner(
+  "Lection View",
+  45,
+  "-",
+)
+document.getElementById("moveheader").innerText = mkbanner("Move List", 45, "-")
+document.getElementById("movefooter").innerText = mkbanner("", 45, "-")
+document.getElementById("vocfooter").innerText = mkbanner("", 45, "-")
+document.getElementById("addfooter").innerText = mkbanner("", 45, "-")
+document.getElementById("viewfooter").innerText = mkbanner("", 45, "-")
+document.getElementById("generatefooter").innerText = mkbanner("", 45, "-")
+document.getElementById("trainfooter").innerText = mkbanner("0/0", 45, "-")
+document.getElementById("lectionviewfooter").innerText = mkbanner("", 45, "-")
 
 // ——— IndexedDB & data helpers ———
 
 function initDB() {
-  const req = indexedDB.open("vocTrainerDB", 1)
+  const req = indexedDB.open("vocTrainerDB", 2)
   req.onupgradeneeded = (e) => {
     db = e.target.result
     if (!db.objectStoreNames.contains("vocabulary")) {
       db.createObjectStore("vocabulary", { keyPath: "key" })
     }
+    if (!db.objectStoreNames.contains("config")) {
+      db.createObjectStore("config", { keyPath: "key" })
+    }
   }
-  req.onsuccess = (e) => {
+  req.onsuccess = async (e) => {
     db = e.target.result
+
+    const ignoreCase = await readConfig("ignoreCase").catch(() => null)
+    if (ignoreCase === null) {
+      writeConfig("ignoreCase", false)
+    }
   }
   req.onerror = (e) => console.log("DB error", e)
 }
@@ -712,4 +939,83 @@ function getFile() {
     reader.readAsText(file)
   }
 }
+
+async function renameLection(oldName, newName) {
+  const all = await readAllData()
+  const itemsToRename = all.filter((x) => x.lection === oldName)
+
+  if (!itemsToRename.length) {
+    console.log(`No entries found for lection "${oldName}"`)
+    return
+  }
+
+  const tx = db.transaction("vocabulary", "readwrite")
+  const store = tx.objectStore("vocabulary")
+
+  itemsToRename.forEach((item) => {
+    item.lection = newName
+    store.put(item)
+  })
+
+  tx.oncomplete = () => {
+    console.log(
+      `Lection "${oldName}" renamed to "${newName}" (${itemsToRename.length} items updated)`,
+    )
+  }
+
+  tx.onerror = (e) => {
+    console.error("Rename failed:", e.target.error)
+  }
+}
+
+function writeConfig(key, value) {
+  if (!db) return
+  const tx = db.transaction("config", "readwrite")
+  const store = tx.objectStore("config")
+  store.put({ key, value })
+}
+
+function readConfig(key) {
+  return new Promise((res, rej) => {
+    if (!db) return rej()
+    const tx = db.transaction("config", "readonly")
+    const store = tx.objectStore("config")
+    const rq = store.get(key)
+    rq.onsuccess = () => res(rq.result?.value || null)
+    rq.onerror = () => rej()
+  })
+}
+
+async function GenerateSpecialList(
+  sourceLection,
+  minFieldValue,
+  maxEntries,
+  fieldName,
+  outputLection,
+) {
+  const data = await readLectionData(sourceLection)
+
+  const result = data
+    .filter((item) => (item[fieldName] || 0) >= minFieldValue)
+    .sort((a, b) => (b[fieldName] || 0) - (a[fieldName] || 0))
+    .slice(0, maxEntries)
+
+  const tx = db.transaction("vocabulary", "readwrite")
+  const store = tx.objectStore("vocabulary")
+
+  result.forEach((item) => {
+    const newKey = item.key + uniqueKeyChar
+    store.put({
+      key: newKey,
+      value: item.value,
+      lection: outputLection,
+      weight: item.weight || 1,
+      wrong: item.wrong || 0,
+      right: item.right || 0,
+    })
+  })
+
+  return result
+}
+
 initDB()

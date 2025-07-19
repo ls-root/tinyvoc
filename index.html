@@ -18,6 +18,8 @@
         <input style="display: none;" type="file" id="file" />
         <p><strong>V</strong>iew</p>
         <p><strong>G</strong>enerate List</p>
+        <p><strong>M</strong>ove List</p>
+        <p><strong>L</strong>ections View</p>
         <p id="vocfooter"></p>
         <p>Your Selection: <strong id="selection"></strong></p>
     </div>
@@ -38,8 +40,26 @@
         <p>Press <strong>-</strong> return to the main menu</p>
         <p id="trainfooter"></p>
         <p id="tlectiont">Lection: <strong id="tlection"></strong></p>
-        <p>Key: <strong id="tkey"></strong></p>
-        <p>Value <strong id="tvalue">???</strong></p>
+        <div id="nstats">
+            <p>Key: <strong id="tkey"></strong></p>
+            <p>Value <strong id="tvalue">???</strong></p>
+        </div>
+        <div id="stats" style="display: none;">
+            <p id="statsbanner"></p>
+            <p>Total Correct: <strong id="s1"></strong></p>
+            <p>Total Wrong: <strong id="s2"></strong></p>
+            <p>Hardest Word: <strong id="s3"></strong> (<strong id="s4"></strong> wrong attempts)</p>
+            <p id="statsfooter"></p>
+        </div>
+    </div>
+
+    <div id="mvm" style="display:none;">
+        <p id="moveheader"></p>
+        <p>Press <strong>-</strong> return to the main menu</p>
+        <p id="movefooter"></p>
+        <p>Source: <strong id="tsource"></strong></p>
+        <p>Destination: <strong id="tdest"></strong></p>
+        <p id="msuc"></p>
     </div>
 
     <div id="vm"  style="display: none;">
@@ -62,6 +82,14 @@
     <div class="printfooter">
         <p id="printfooter"></p>
     </div>
+
+    <div id="lm" style="display: none;">
+        <p id="lectionviewheader"></p>
+        <p>Press <strong>-</strong> return to the main menu</p>
+        <p id="lectionviewfooter"></p>
+        <div id="lectionview"></div>
+    </div>
+
 
     <div id="gm" style="display: none;">
         <p id="generateheader"></p>
