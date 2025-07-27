@@ -10,6 +10,11 @@ let currentActionValue = ""
 let currentParamValue = ""
 let currentParam2Value = ""
 let currentSourceValue = ""
+let correctState = "lection"
+let currentLectionCValue = ""
+let currentIdCValue = ""
+let currentKeyCValue = ""
+let currentValueCValue = ""
 let currentDestinationValue = ""
 let selectedLection = ""
 let generateState = "transform"
@@ -66,6 +71,8 @@ document.addEventListener("keydown", async (e) => {
     "M",
     "l",
     "L",
+    "c",
+    "C",
     "-",
     "Enter",
   ].includes(e.key)
@@ -90,6 +97,8 @@ document.addEventListener("keydown", async (e) => {
       showMoveMenu()
     } else if (e.key === "l" || e.key === "L") {
       showLectionsMenu()
+    } else if (e.key === "c" || e.key === "C") {
+      showCorrectMenu()
     }
   }
 
@@ -101,6 +110,7 @@ document.addEventListener("keydown", async (e) => {
     hideGenerateMenu()
     hideMoveMenu()
     hideLectionsMenu()
+    hideCorrectMenu()
     showMainMenu()
     sel.innerText = ""
   }
@@ -119,6 +129,9 @@ document.addEventListener("keydown", async (e) => {
 
   // MOVE MENU
   if (menu === "mvm") handleMoveMenu(e)
+
+  // CORRECT MENU
+  if (menu === "cm") handleCorrectMenu(e)
 })
 
 // ——— Menu show/hide helpers ———
@@ -140,6 +153,10 @@ function hideGenerateMenu() {
   document.getElementById("gm").style.display = "none"
 }
 
+function hideCorrectMenu() {
+  document.getElementById("cm").style.display = "none"
+}
+
 function hideLectionsMenu() {
   document.getElementById("lm").style.display = "none"
 }
@@ -154,6 +171,7 @@ function showAddMenu() {
   hideGenerateMenu()
   hideViewMenu()
   hideMoveMenu()
+  hideCorrectMenu()
   document.getElementById("am").style.display = "block"
   menu = "am"
   addstate = "lection"
@@ -164,6 +182,20 @@ function showAddMenu() {
   document.getElementById("key").innerText = ""
   document.getElementById("valuevalue").innerText = ""
   document.getElementById("value").style.display = "none"
+}
+
+function showCorrectMenu() {
+  currentIdValue = ""
+  currentKeyCValue = ""
+  currentValueCValue = ""
+  currentLectionCValue = ""
+  document.getElementById("idc").innerText = ""
+  document.getElementById("keyc").innerText = ""
+  document.getElementById("valuec").innerText = ""
+  document.getElementById("lectionc").innerText = ""
+  menu = "cm"
+  hideMainMenu()
+  document.getElementById("cm").style.display = "block"
 }
 
 async function showLectionsMenu() {
@@ -244,6 +276,122 @@ async function showViewMenu() {
   ilectionSelect.style.color = "blue"
 }
 
+// ——— Correct menu logic ———
+async function handleCorrectMenu(e) {
+  if (correctState === "lection") {
+    if (e.key === "Backspace") {
+      currentLectionCValue = currentLectionCValue.slice(0, -1)
+    } else if (e.key === "Enter") {
+      const lections = await readAllLections()
+      if (lections.includes(currentLectionCValue)) {
+        document.getElementById("lectionc").style.color = "white"
+        correctState = "id"
+        document.getElementById("idc").style.color = "blue"
+      } else {
+        document.getElementById("lectionc").style.color = "red"
+      }
+      e.preventDefault()
+    } else if (e.key.length === 1) {
+      currentLectionCValue += e.key
+    }
+    document.getElementById("lectionc").innerText = currentLectionCValue
+  } else if (correctState === "id") {
+    if (e.key === "Backspace") {
+      currentIdCValue = currentIdCValue.slice(0, -1)
+    } else if (e.key === "Enter") {
+      const idNum = parseInt(currentIdCValue)
+      if (!isNaN(idNum)) {
+        const lectionData = await readLectionData(currentLectionCValue)
+        const entryExists = lectionData.find((item) => item.id === idNum)
+        if (entryExists) {
+          document.getElementById("idc").style.color = "white"
+          correctState = "key"
+          document.getElementById("keyc").style.color = "blue"
+          currentKeyCValue = entryExists.vocabWord
+          currentValueCValue = entryExists.value
+
+          document.getElementById("keyc").innerText = currentKeyCValue
+          document.getElementById("valuec").innerText = currentValueCValue
+        } else {
+          document.getElementById("idc").style.color = "red"
+        }
+      } else {
+        document.getElementById("idc").style.color = "red"
+      }
+      e.preventDefault()
+    } else if (e.key.length === 1) {
+      currentIdCValue += e.key
+    }
+    document.getElementById("idc").innerText = currentIdCValue
+  } else if (correctState === "key") {
+    if (e.key === "Backspace") {
+      currentKeyCValue = currentKeyCValue.slice(0, -1)
+    } else if (e.key === "Enter") {
+      document.getElementById("keyc").style.color = "white"
+      correctState = "value"
+      document.getElementById("valuec").style.color = "blue"
+      e.preventDefault()
+    } else if (e.key.length === 1) {
+      currentKeyCValue += e.key
+    }
+    document.getElementById("keyc").innerText = currentKeyCValue
+  } else if (correctState === "value") {
+    if (e.key === "Backspace") {
+      currentValueCValue = currentValueCValue.slice(0, -1)
+    } else if (e.key === "Enter") {
+      await updateVocabularyEntry(
+        parseInt(currentIdCValue),
+        currentKeyCValue,
+        currentValueCValue,
+      )
+
+      document.getElementById("valuec").style.color = "white"
+      correctState = "id"
+      currentIdCValue = ""
+      currentKeyCValue = ""
+      currentValueCValue = ""
+
+      document.getElementById("idc").innerText = ""
+      document.getElementById("keyc").innerText = ""
+      document.getElementById("valuec").innerText = ""
+      document.getElementById("idc").style.color = "blue"
+      document.getElementById("keyc").style.color = "blue"
+      document.getElementById("valuec").style.color = "blue"
+
+      e.preventDefault()
+    } else if (e.key.length === 1) {
+      currentValueCValue += e.key
+    }
+    document.getElementById("valuec").innerText = currentValueCValue
+  }
+}
+async function updateVocabularyEntry(id, newVocabWord, newValue) {
+  return new Promise((resolve, reject) => {
+    if (!db) return reject("Database not available")
+
+    const tx = db.transaction("vocabulary", "readwrite")
+    const store = tx.objectStore("vocabulary")
+    const rq = store.get(id)
+
+    rq.onsuccess = () => {
+      const data = rq.result
+      if (data) {
+        data.vocabWord = newVocabWord
+        data.value = newValue
+        const updateRq = store.put(data)
+
+        updateRq.onsuccess = () => {
+          resolve()
+        }
+        updateRq.onerror = () => reject(updateRq.error)
+      } else {
+        reject("Entry not found")
+      }
+    }
+    rq.onerror = () => reject(rq.error)
+  })
+}
+
 // ——— View menu logic ---
 
 async function handleViewMenu(e) {
@@ -268,11 +416,11 @@ async function handleViewMenu(e) {
       }
 
       resetView()
-      // Sort by id (insertion order) for view
       data.sort((a, b) => a.id - b.id)
       data.forEach((element) => {
         addToView(
-          element.vocabWord, // Changed from element.key
+          element.id,
+          element.vocabWord,
           element.value,
           element.lection,
           element.right,
@@ -352,6 +500,7 @@ async function handleGenerateMenu(e) {
     } else if (e.key.length === 1) {
       currentTransformValue += e.key
     }
+    y
     transformEl.innerText = currentTransformValue
   } else if (generateState === "action") {
     if (e.key === "Backspace") {
@@ -689,9 +838,8 @@ async function checkAnswer() {
     }
 
     if (currentAttempts + 1 >= 3) {
-      // Show solution after 3 wrong attempts
       trainstate = "showingSolution"
-      currentTValueValue = correctValue // Put correct answer in input
+      currentTValueValue = correctValue
       tvElt.innerText = correctValue
       tvElt.style.color = "yellow"
       document.getElementById("trainfooter").innerText = mkbanner(
@@ -700,19 +848,16 @@ async function checkAnswer() {
         "-",
       )
 
-      // Remove from current position and add back later
       wrongAttempts.delete(vocabWord)
-      shuffledKeys.pop() // Remove current word
+      shuffledKeys.pop()
 
-      // Insert word to be asked later (about 30% through remaining questions)
       if (shuffledKeys.length > 3) {
         const insertPosition = Math.floor(shuffledKeys.length * 0.3)
         shuffledKeys.splice(insertPosition, 0, vocabWord)
       } else if (shuffledKeys.length > 0) {
-        shuffledKeys.unshift(vocabWord) // Add to beginning if few questions remain
+        shuffledKeys.unshift(vocabWord)
       }
     } else {
-      // Wrong but less than 3 attempts - try again
       setTimeout(() => {
         tvElt.style.color = "blue"
         currentTValueValue = ""
@@ -731,12 +876,18 @@ function mkbanner(text, width, sep) {
   return sep.repeat(l) + text + sep.repeat(r)
 }
 
+document.getElementById("correctbanner").innerText = mkbanner(
+  "Correct vocabulary",
+  45,
+  "-",
+)
+document.getElementById("correctfooter").innerText = mkbanner("", 45, "-")
 document.getElementById("statsbanner").innerText = mkbanner(
   "Training Statistics",
-  30,
+  45,
   "=",
 )
-document.getElementById("statsfooter").innerText = mkbanner("", 30, "=")
+document.getElementById("statsfooter").innerText = mkbanner("", 45, "=")
 document.getElementById("vocbanner").innerText = mkbanner("TinyVoc", 45, "-")
 document.getElementById("addbanner").innerText = mkbanner(
   "Add vocabulary",
@@ -903,21 +1054,24 @@ function resetView() {
   document.getElementById("viewElement").innerHTML = ""
 }
 
-function addToView(key, value, lection, right, wrong) {
+function addToView(id, key, value, lection, right, wrong) {
   const viewElement = document.getElementById("viewElement")
   const tr = document.createElement("tr")
+  const tdId = document.createElement("td")
   const tdKey = document.createElement("td")
   const tdValue = document.createElement("td")
   const tdWrong = document.createElement("td")
   const tdRight = document.createElement("td")
   const tdLection = document.createElement("td")
 
+  tdId.innerText = id
   tdKey.innerText = key
   tdValue.innerText = value
   tdLection.innerText = lection
   tdWrong.innerText = wrong
   tdRight.innerText = right
 
+  tr.appendChild(tdId) // ID as first column
   tr.appendChild(tdKey)
   tr.appendChild(tdValue)
   tr.appendChild(tdLection)
