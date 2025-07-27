@@ -671,6 +671,7 @@ async function trainInit() {
     totalCorrect: 0,
     totalWrong: 0,
     hardestWord: { key: "", attempts: 0 },
+    maxAttemptsPerWord: new Map()
   }
   document.getElementById("tlection").innerText = ""
   document.getElementById("tlectiont").style.color = "white"
@@ -681,7 +682,6 @@ async function trainInit() {
   document.getElementById("stats").style.display = "none"
   document.getElementById("nstats").style.display = "block"
 }
-
 async function handleTrainMenu(e) {
   if (trainstate === "lection") {
     if (e.key === "Backspace")
@@ -831,13 +831,20 @@ async function checkAnswer() {
   } else {
     trainStats.totalWrong++
     const currentAttempts = wrongAttempts.get(vocabWord) || 0
-    wrongAttempts.set(vocabWord, currentAttempts + 1)
+    const newAttempts = currentAttempts + 1
+    wrongAttempts.set(vocabWord, newAttempts)
 
-    if (currentAttempts + 1 > trainStats.hardestWord.attempts) {
-      trainStats.hardestWord = { key: vocabWord, attempts: currentAttempts + 1 }
+    const maxAttempts = Math.max(
+      trainStats.maxAttemptsPerWord.get(vocabWord) || 0,
+      newAttempts
+    )
+    trainStats.maxAttemptsPerWord.set(vocabWord, maxAttempts)
+
+    if (maxAttempts > trainStats.hardestWord.attempts) {
+      trainStats.hardestWord = { key: vocabWord, attempts: maxAttempts }
     }
 
-    if (currentAttempts + 1 >= 3) {
+    if (newAttempts >= 3) {
       trainstate = "showingSolution"
       currentTValueValue = correctValue
       tvElt.innerText = correctValue
@@ -851,11 +858,11 @@ async function checkAnswer() {
       wrongAttempts.delete(vocabWord)
       shuffledKeys.pop()
 
-      if (shuffledKeys.length > 3) {
+      if (shuffledKeys.length > 0) {
         const insertPosition = Math.floor(shuffledKeys.length * 0.3)
         shuffledKeys.splice(insertPosition, 0, vocabWord)
-      } else if (shuffledKeys.length > 0) {
-        shuffledKeys.unshift(vocabWord)
+      } else {
+        shuffledKeys.push(vocabWord)
       }
     } else {
       setTimeout(() => {
@@ -866,7 +873,6 @@ async function checkAnswer() {
     }
   }
 }
-
 // ——— Banner init ———
 
 function mkbanner(text, width, sep) {
