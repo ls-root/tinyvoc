@@ -1042,31 +1042,113 @@ async function readAllLections() {
 }
 
 function deleteAllData() {
-  return new Promise((res, rej) => {
-    if (!db) return rej()
+  return new Promise((resolve, reject) => {
+    if (!db) return reject("Database not available")
+
     const tx = db.transaction("vocabulary", "readwrite")
     const store = tx.objectStore("vocabulary")
-    const rq = store.clear()
-    rq.onsuccess = () => res()
-    rq.onerror = () => rej(rq.error)
+    const request = store.clear()
+
+    request.onsuccess = () => {
+      console.log("All data deleted successfully")
+      resolve()
+    }
+
+    request.onerror = (e) => {
+      console.error("Failed to delete data:", e.target.error)
+      reject(e.target.error)
+    }
   })
 }
 
 function importData(data) {
   return new Promise((resolve, reject) => {
     if (!db) return reject("Database not available")
+
+    if (!data || !Array.isArray(data) || data.length === 0) {
+      return reject("Invalid or empty data array")
+    }
+
     const tx = db.transaction("vocabulary", "readwrite")
     const store = tx.objectStore("vocabulary")
+    let completed = 0
+    let skipped = 0
+    const total = data.length
+    let hasError = false
 
-    data.forEach((item) => {
-      store.put(item)
+    tx.oncomplete = () => {
+      if (!hasError) {
+        console.log(`Import completed: ${completed} imported, ${skipped} skipped/updated`)
+        resolve({ imported: completed, skipped: skipped })
+      }
+    }
+
+    tx.onerror = (e) => {
+      hasError = true
+      console.error("Import transaction failed:", e.target.error)
+      reject(e.target.error)
+    }
+
+    data.forEach((item, index) => {
+      try {
+        const itemToStore = {
+          vocabWord: item.vocabWord || "",
+          value: item.value || "",
+          lection: item.lection || "",
+          weight: item.weight || 1,
+          wrong: item.wrong || 0,
+          right: item.right || 0
+        }
+
+        const vocabIndex = store.index("vocabWord")
+        const checkRequest = vocabIndex.get(itemToStore.vocabWord)
+
+        checkRequest.onsuccess = () => {
+          const existingEntry = checkRequest.result
+
+          if (existingEntry) {
+            const updateRequest = store.put({
+              ...itemToStore,
+              id: existingEntry.id
+            })
+
+            updateRequest.onsuccess = () => {
+              skipped++
+              completed++
+              console.log(`Updated existing entry: ${itemToStore.vocabWord}`)
+            }
+
+            updateRequest.onerror = (e) => {
+              console.error(`Failed to update item ${index}:`, itemToStore, e.target.error)
+              completed++
+            }
+          } else {
+            const addRequest = store.add(itemToStore)
+
+            addRequest.onsuccess = () => {
+              completed++
+              console.log(`Added new entry: ${itemToStore.vocabWord}`)
+            }
+
+            addRequest.onerror = (e) => {
+              console.error(`Failed to add item ${index}:`, itemToStore, e.target.error)
+              completed++
+            }
+          }
+        }
+
+        checkRequest.onerror = (e) => {
+          console.error(`Failed to check existing item ${index}:`, itemToStore, e.target.error)
+          completed++
+        }
+
+      } catch (error) {
+        console.error(`Error processing item ${index}:`, item, error)
+        completed++
+      }
     })
-
-    tx.oncomplete = () => resolve()
-    tx.onerror = (e) => reject(e.target.error)
   })
 }
-
 function download(content) {
   const blob = new Blob([content], { type: "text/plain" })
   const url = URL.createObjectURL(blob)
@@ -1115,8 +1197,10 @@ function addToView(id, key, value, lection, right, wrong) {
 function getFile() {
   const fileInput = document.getElementById("file")
   const importText = document.getElementById("iv")
+
   importText.style.display = "none"
   fileInput.style.display = "block"
+  fileInput.value = ""
 
   fileInput.onchange = () => {
     const file = fileInput.files[0]
@@ -1124,37 +1208,204 @@ function getFile() {
 
     const reader = new FileReader()
     reader.onload = async (e) => {
+      let importedData
+      let keydownHandler
+
       try {
-        const importedData = JSON.parse(e.target.result)
+        importedData = JSON.parse(e.target.result)
+
+        if (!Array.isArray(importedData)) {
+          throw new Error("Data must be an array")
+        }
 
         fileInput.style.display = "none"
         importText.style.display = "block"
         importText.innerHTML =
-          "Do you want to add <strong>(b)</strong> it or overwrite <strong>(o)</strong>?"
+          `Found ${importedData.length} entries. <br>` +
+          "<strong>ADD (b)</strong>: Keep all existing data + add new entries<br>" +
+          "<strong>OVERWRITE (o)</strong>: Delete everything + import these entries<br>" +
+          "<strong>ESC</strong>: Cancel"
 
-        const handler = async (ev) => {
-          if (ev.key === "b" || ev.key === "B") {
-            // Merge data
-            await importData(importedData)
-            location.reload()
-          } else if (ev.key === "o" || ev.key === "O") {
-            // Overwrite data
-            await deleteAllData()
-            await importData(importedData)
-            location.reload()
+        keydownHandler = async (ev) => {
+          document.removeEventListener("keydown", keydownHandler)
+
+          try {
+            if (ev.key === "b" || ev.key === "B") {
+              importText.innerHTML = "ADD MODE: Adding new vocabulary (existing data safe)..."
+              importText.style.color = "blue"
+
+              const result = await addOnlyImportData(importedData)
+
+              importText.innerHTML =
+                `ADD MODE Complete!<br>` +
+                `• ${result.added} new entries added<br>` +
+                `• ${result.skipped} duplicates skipped<br>` +
+                `• All existing data preserved<br>` +
+                `Reloading in 3 seconds...`
+              importText.style.color = "green"
+
+              setTimeout(() => location.reload(), 3000)
+
+            } else if (ev.key === "o" || ev.key === "O") {
+              importText.innerHTML = "OVERWRITE MODE: This will delete ALL existing data!"
+              importText.style.color = "red"
+
+              setTimeout(async () => {
+                try {
+                  await overwriteImportData(importedData)
+
+                  importText.innerHTML =
+                    `OVERWRITE Complete!<br>` +
+                    `All old data deleted<br>` +
+                    `${importedData.length} new entries imported<br>` +
+                    `Reloading in 2 seconds...`
+                  importText.style.color = "green"
+
+                  setTimeout(() => location.reload(), 2000)
+                } catch (error) {
+                  importText.innerHTML = `OVERWRITE Failed: ${error.message}`
+                  importText.style.color = "red"
+                  setTimeout(() => location.reload(), 3000)
+                }
+              }, 1000)
+
+            } else if (ev.key === "Escape") {
+              importText.style.display = "none"
+              fileInput.style.display = "block"
+              return
+            } else {
+              document.addEventListener("keydown", keydownHandler)
+              return
+            }
+          } catch (error) {
+            console.error("Import operation failed:", error)
+            importText.innerHTML = `Import failed: ${error.message}<br>Press any key to reload.`
+            importText.style.color = "red"
+
+            const errorHandler = () => {
+              document.removeEventListener("keydown", errorHandler)
+              location.reload()
+            }
+            document.addEventListener("keydown", errorHandler)
           }
-          document.removeEventListener("keydown", handler)
         }
-        document.addEventListener("keydown", handler)
+
+        document.addEventListener("keydown", keydownHandler)
+
       } catch (error) {
-        console.error("Import error:", error)
-        importText.innerHTML = "Invalid file format. Press any key"
-        const handler = () => location.reload()
-        document.addEventListener("keydown", handler)
+        console.error("File parsing error:", error)
+        importText.style.display = "block"
+        fileInput.style.display = "none"
+        importText.innerHTML = "Invalid file format. Press any key to try again."
+        importText.style.color = "red"
+
+        const parseErrorHandler = () => {
+          document.removeEventListener("keydown", parseErrorHandler)
+          importText.style.color = ""
+          getFile()
+        }
+        document.addEventListener("keydown", parseErrorHandler)
       }
     }
+
     reader.readAsText(file)
   }
+}
+
+function addOnlyImportData(data) {
+  return new Promise((resolve, reject) => {
+    if (!db) return reject("Database not available")
+
+    if (!data || !Array.isArray(data) || data.length === 0) {
+      return reject("Invalid or empty data array")
+    }
+
+    console.log("ADD MODE: Starting safe import - no existing data will be deleted")
+
+    let processed = 0
+    let added = 0
+    let skipped = 0
+    const total = data.length
+    const results = []
+
+    const processNextItem = (index) => {
+      if (index >= total) {
+        console.log(`ADD MODE completed: ${added} added, ${skipped} skipped (duplicates)`)
+        resolve({ added, skipped, total: processed })
+        return
+      }
+
+      const item = data[index]
+
+      // Create clean object without ID
+      const cleanItem = {
+        vocabWord: (item.vocabWord || "").toString(),
+        value: (item.value || "").toString(),
+        lection: (item.lection || "").toString(),
+        weight: item.weight || 1,
+        wrong: item.wrong || 0,
+        right: item.right || 0
+      }
+
+      const tx = db.transaction("vocabulary", "readonly")
+      const store = tx.objectStore("vocabulary")
+      const vocabIndex = store.index("vocabWord")
+      const checkRequest = vocabIndex.get(cleanItem.vocabWord)
+
+      checkRequest.onsuccess = () => {
+        if (checkRequest.result) {
+          console.log(`Skipping existing vocabulary: ${cleanItem.vocabWord}`)
+          skipped++
+          processed++
+          processNextItem(index + 1)
+        } else {
+          const addTx = db.transaction("vocabulary", "readwrite")
+          const addStore = addTx.objectStore("vocabulary")
+          const addRequest = addStore.add(cleanItem)
+
+          addRequest.onsuccess = () => {
+            console.log(`Added new vocabulary: ${cleanItem.vocabWord}`)
+            added++
+            processed++
+            processNextItem(index + 1)
+          }
+
+          addRequest.onerror = (e) => {
+            console.log(`Failed to add ${cleanItem.vocabWord}:`, e.target.error)
+            skipped++
+            processed++
+            processNextItem(index + 1)
+          }
+        }
+      }
+
+      checkRequest.onerror = (e) => {
+        console.error(`Error checking vocabulary ${cleanItem.vocabWord}:`, e.target.error)
+        skipped++
+        processed++
+        processNextItem(index + 1)
+      }
+    }
+
+    // Start processing
+    processNextItem(0)
+  })
+}
+
+function overwriteImportData(data) {
+  return new Promise(async (resolve, reject) => {
+    try {
+      console.log("OVERWRITE MODE: Deleting all existing data first")
+      await deleteAllData()
+
+      console.log("OVERWRITE MODE: Adding new data")
+      await addOnlyImportData(data)
+
+      resolve()
+    } catch (error) {
+      reject(error)
+    }
+  })
 }
 
 async function renameLection(oldName, newName) {
