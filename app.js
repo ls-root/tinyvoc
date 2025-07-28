@@ -185,7 +185,7 @@ function showAddMenu() {
 }
 
 function showCorrectMenu() {
-  currentIdValue = ""
+  currentIdCValue = ""
   currentKeyCValue = ""
   currentValueCValue = ""
   currentLectionCValue = ""
@@ -204,11 +204,30 @@ async function showLectionsMenu() {
   // Render articles
   document.getElementById("lectionview").innerHTML = ""
   const lections = await readAllLections()
-  lections.forEach((item) => {
+
+  for (const item of lections) {
+    const lectionData = await readLectionData(item)
+
+    let totalAttempts = 0
+    let totalVocabulary = 0
+    let totalWrong = 0
+    let totalRight = 0
+
+    lectionData.forEach(word => {
+      const right = word.right || 0
+      const wrong = word.wrong || 0
+      totalAttempts += (right + wrong)
+      totalRight += right
+      totalWrong += wrong
+      totalVocabulary++
+    })
+
+
+
     const p = document.createElement("p")
-    p.innerText = item
+    p.innerText = `${item} - Success Score: ${totalAttempts / totalVocabulary} - Correctnessqoute: ${totalRight / totalVocabulary * 10}%`
     document.getElementById("lectionview").appendChild(p)
-  })
+  }
   menu = "lm"
 }
 
@@ -795,11 +814,7 @@ async function nextQuestion() {
 
   document.getElementById("tvalue").innerText = "???"
   const done = dataToTrain.length - shuffledKeys.length
-  document.getElementById("trainfooter").innerText = mkbanner(
-    `${done}/${dataToTrain.length}`,
-    45,
-    "-",
-  )
+  document.getElementById("trainfooter").innerText = mkBannerProgress(`${done}/${dataToTrain.length}`, 45, "-", "=", Math.round((done / dataToTrain.length) * 45))
 }
 
 async function checkAnswer() {
@@ -899,6 +914,23 @@ async function checkAnswer() {
   }
 }
 // ——— Banner init ———
+
+function mkBannerProgress(text, width, sep, fillsep, fill) {
+  const textLen = text.length
+  const barLen = width
+
+  const pad = barLen - textLen
+  const lpad = Math.floor(pad / 2)
+  const rpad = Math.ceil(pad / 2)
+
+  const leftFill = Math.min(fill, lpad)
+  const rightFill = Math.max(0, fill - leftFill)
+
+  const left = fillsep.repeat(leftFill) + sep.repeat(lpad - leftFill)
+  const right = fillsep.repeat(rightFill) + sep.repeat(rpad - rightFill)
+
+  return left + text + right
+}
 
 function mkbanner(text, width, sep) {
   const pad = width - text.length
