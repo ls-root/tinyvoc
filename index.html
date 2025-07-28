@@ -1,120 +1,121 @@
-<!DOCTYPE html>
-<html lang="en">
+<p!DOCTYPE html>
+    <html lang="en">
 
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>TinyVoc</title>
-    <link rel="stylesheet" href="style.css">
-</head>
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>TinyVoc</title>
+        <link rel="stylesheet" href="style.css">
+    </head>
 
-<body>
-    <div id="mm">
-        <p id="vocbanner"></p>
-        <p><strong>A</strong>dd vocabulary</p>
-        <p><strong>T</strong>rain vocabulary</p>
-        <p><strong>E</strong>xport vocabulary</p>
-        <p id="iv"><strong>I</strong>mport vocabulary</p>
-        <input style="display: none;" type="file" id="file" />
-        <p><strong>V</strong>iew</p>
-        <p><strong>G</strong>enerate List</p>
-        <p><strong>M</strong>ove List</p>
-        <p><strong>L</strong>ections View</p>
-        <p><strong>C</strong>orrect vocabulary</p>
-        <p id="vocfooter"></p>
-        <p>Your Selection: <strong id="selection"></strong></p>
-    </div>
-
-    <div id="cm" style="display: none;">
-        <p id="correctbanner"></p>
-        <p>Press <strong>Enter</strong> to go to the next field</p>
-        <p>Press <strong>-</strong> to save and return to the main menu</p>
-        <p id="correctfooter"></p>
-        <p>Lection: <strong id="lectionc"></strong></p>
-        <p>ID: <strong id="idc"></strong></p>
-        <p>Key: <strong id="keyc"></strong></p>
-        <p>Value: <strong id="valuec"></strong></p>
-    </div>
-
-    <div id="am" style="display: none;">
-        <p id="addbanner"></p>
-        <p>Press <strong>Enter</strong> to go to the next field</p>
-        <p>Press <strong>-</strong> to save and return to the main menu</p>
-        <p id="addfooter"></p>
-        <p id="lectiont">Lection: <strong id="lection"></strong></p>
-        <p>Key: <strong id="key"></strong></p>
-        <p id="value">Value: <strong id="valuevalue"></strong></p>
-    </div>
-
-    <div id="tm" style="display: none;">
-        <p id="trainbanner"></p>
-        <p>Press <strong>Enter</strong> to go to the next field</p>
-        <p>Press <strong>-</strong> return to the main menu</p>
-        <p id="trainfooter"></p>
-        <p id="tlectiont">Lection: <strong id="tlection"></strong></p>
-        <div id="nstats">
-            <p>Key: <strong id="tkey"></strong></p>
-            <p>Value <strong id="tvalue">???</strong></p>
+    <body>
+        <div id="mm">
+            <p id="vocbanner"></p>
+            <p><strong>A</strong>dd vocabulary</p>
+            <p><strong>T</strong>rain vocabulary</p>
+            <p><strong>E</strong>xport vocabulary</p>
+            <p id="iv"><strong>I</strong>mport vocabulary</p>
+            <input style="display: none;" type="file" id="file" />
+            <p><strong>V</strong>iew</p>
+            <p><strong>G</strong>enerate List</p>
+            <p><strong>M</strong>ove List</p>
+            <p><strong>L</strong>ections View</p>
+            <p><strong>C</strong>orrect vocabulary</p>
+            <p><strong>S</strong>ettings</p>
+            <p id="vocfooter"></p>
+            <p>Your Selection: <strong id="selection"></strong></p>
         </div>
-        <div id="stats" style="display: none;">
-            <p id="statsbanner"></p>
-            <p>Total Correct: <strong id="s1"></strong></p>
-            <p>Total Wrong: <strong id="s2"></strong></p>
-            <p>Hardest Word: <strong id="s3"></strong> (<strong id="s4"></strong> wrong attempts)</p>
-            <p id="statsfooter"></p>
+
+        <div id="cm" style="display: none;">
+            <p id="correctbanner"></p>
+            <p>Press <strong>Enter</strong> to go to the next field</p>
+            <p>Press <strong>-</strong> to save and return to the main menu</p>
+            <p id="correctfooter"></p>
+            <p>Lection: <strong id="lectionc"></strong></p>
+            <p>ID: <strong id="idc"></strong></p>
+            <p>Key: <strong id="keyc"></strong></p>
+            <p>Value: <strong id="valuec"></strong></p>
         </div>
-    </div>
 
-    <div id="mvm" style="display:none;">
-        <p id="moveheader"></p>
-        <p>Press <strong>-</strong> return to the main menu</p>
-        <p id="movefooter"></p>
-        <p>Source: <strong id="tsource"></strong></p>
-        <p>Destination: <strong id="tdest"></strong></p>
-        <p id="msuc"></p>
-    </div>
+        <div id="am" style="display: none;">
+            <p id="addbanner"></p>
+            <p>Press <strong>Enter</strong> to go to the next field</p>
+            <p>Press <strong>-</strong> to save and return to the main menu</p>
+            <p id="addfooter"></p>
+            <p id="lectiont">Lection: <strong id="lection"></strong></p>
+            <p>Key: <strong id="key"></strong></p>
+            <p id="value">Value: <strong id="valuevalue"></strong></p>
+        </div>
 
-    <div id="vm"  style="display: none;">
-        <p id="viewbanner"></p>
-        <p>Press <strong>-</strong> return to the main menu</p>
-        <p id="viewfooter"></p>
-        <p>Select a lection: <strong id="ilectionSelect"></strong></p>
-        <table>
-            <thead>
-                <td>ID</td>
-                <td>Key</td>
-                <td>Value</td>
-                <td>Lection</td>
-                <td>Wrong</td>
-                <td>Right</td>
-            </thead>
-        </table>
-        <div id="viewElement"></div>
-    </div>
+        <div id="tm" style="display: none;">
+            <p id="trainbanner"></p>
+            <p>Press <strong>Enter</strong> to go to the next field</p>
+            <p>Press <strong>-</strong> return to the main menu</p>
+            <p id="trainfooter"></p>
+            <p id="tlectiont">Lection: <strong id="tlection"></strong></p>
+            <div id="nstats">
+                <p>Key: <strong id="tkey"></strong></p>
+                <p>Value <strong id="tvalue">???</strong></p>
+            </div>
+            <div id="stats" style="display: none;">
+                <p id="statsbanner"></p>
+                <p>Total Correct: <strong id="s1"></strong></p>
+                <p>Total Wrong: <strong id="s2"></strong></p>
+                <p>Hardest Word: <strong id="s3"></strong> (<strong id="s4"></strong> wrong attempts)</p>
+                <p id="statsfooter"></p>
+            </div>
+        </div>
 
-    <div class="printfooter">
-        <p id="printfooter"></p>
-    </div>
+        <div id="mvm" style="display:none;">
+            <p id="moveheader"></p>
+            <p>Press <strong>-</strong> return to the main menu</p>
+            <p id="movefooter"></p>
+            <p>Source: <strong id="tsource"></strong></p>
+            <p>Destination: <strong id="tdest"></strong></p>
+            <p id="msuc"></p>
+        </div>
 
-    <div id="lm" style="display: none;">
-        <p id="lectionviewheader"></p>
-        <p>Press <strong>-</strong> return to the main menu</p>
-        <p id="lectionviewfooter"></p>
-        <div id="lectionview"></div>
-    </div>
+        <div id="vm" style="display: none;">
+            <p id="viewbanner"></p>
+            <p>Press <strong>-</strong> return to the main menu</p>
+            <p id="viewfooter"></p>
+            <p>Select a lection: <strong id="ilectionSelect"></strong></p>
+            <table>
+                <thead>
+                    <td>ID</td>
+                    <td>Key</td>
+                    <td>Value</td>
+                    <td>Lection</td>
+                    <td>Wrong</td>
+                    <td>Right</td>
+                </thead>
+            </table>
+            <div id="viewElement"></div>
+        </div>
+
+        <div class="printfooter">
+            <p id="printfooter"></p>
+        </div>
+
+        <div id="lm" style="display: none;">
+            <p id="lectionviewheader"></p>
+            <p>Press <strong>-</strong> return to the main menu</p>
+            <p id="lectionviewfooter"></p>
+            <div id="lectionview"></div>
+        </div>
 
 
-    <div id="gm" style="display: none;">
-        <p id="generateheader"></p>
-        <p>Press <strong>-</strong> return to the main menu</p>
-        <p id="generatefooter"></p>
-        <p>List to transform: <strong id="transformt"></strong></p>
-        <p>Transform action: <strong id="actiont"></strong></p>
-        <p id="param">Param 1: <strong id="paramt"></strong></p>
-        <p id="param2">Param 2: <strong id="param2t"></strong></p>
-        <p id="tsuccses">Transformed into <strong id="ttransto"></strong></p>
-    </div>
-    <script src="app.js" defer></script>
-</body>
+        <div id="gm" style="display: none;">
+            <p id="generateheader"></p>
+            <p>Press <strong>-</strong> return to the main menu</p>
+            <p id="generatefooter"></p>
+            <p>List to transform: <strong id="transformt"></strong></p>
+            <p>Transform action: <strong id="actiont"></strong></p>
+            <p id="param">Param 1: <strong id="paramt"></strong></p>
+            <p id="param2">Param 2: <strong id="param2t"></strong></p>
+            <p id="tsuccses">Transformed into <strong id="ttransto"></strong></p>
+        </div>
+        <script src="app.js" defer></script>
+    </body>
 
-</html>
+    </html>

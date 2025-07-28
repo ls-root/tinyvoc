@@ -500,7 +500,7 @@ async function handleGenerateMenu(e) {
     } else if (e.key.length === 1) {
       currentTransformValue += e.key
     }
-    y
+
     transformEl.innerText = currentTransformValue
   } else if (generateState === "action") {
     if (e.key === "Backspace") {
@@ -576,7 +576,7 @@ async function GenerateList(action, param, param2, lection) {
 
   if (action == 0) {
     // Sort
-    const sortProp = param || "key"
+    const sortProp = param || "vocabWord"
     result = [...data].sort((a, b) => {
       if (["right", "wrong", "weight"].includes(sortProp)) {
         return (a[sortProp] || 0) - (b[sortProp] || 0)
@@ -587,14 +587,13 @@ async function GenerateList(action, param, param2, lection) {
     // Reverse
     console.log("data:", data)
     result = [...data].reverse()
-
     console.log("result:", result)
   } else if (action == 2) {
     // Remove all under specified value
     const num = Number(param)
     result = data.filter((entry) => Number(entry[param2]) > num)
   } else if (action == 3) {
-    // Remove all ober specified value
+    // Remove all over specified value
     const num = Number(param)
     result = data.filter((entry) => Number(entry[param2]) < num)
   } else if (action == 4) {
@@ -602,20 +601,46 @@ async function GenerateList(action, param, param2, lection) {
     const n = Number(param)
     result = data.slice(0, n)
   }
+
   let target = lection + "t"
   const allLections = await readAllLections()
   while (allLections.includes(target)) {
     target += "t"
   }
 
-  result.forEach((item) => {
-    writeData(item.key, item.value, target)
+  return new Promise((resolve, reject) => {
+    if (!db) return reject("Database not available")
+
+    const tx = db.transaction("vocabulary", "readwrite")
+    const store = tx.objectStore("vocabulary")
+
+    tx.oncomplete = () => {
+      console.log(`Successfully created ${result.length} entries in lection: ${target}`)
+      document.getElementById("ttransto").innerText = target
+      resolve(result)
+    }
+
+    tx.onerror = (event) => {
+      console.error("Transaction failed:", event.target.error)
+      reject(event.target.error)
+    }
+
+    result.forEach((item) => {
+      const request = store.put({
+        vocabWord: item.vocabWord,
+        value: item.value,
+        lection: target,
+        weight: 1,
+        wrong: 0,
+        right: 0,
+      })
+
+      request.onerror = (event) => {
+        console.error("Failed to add item:", item.vocabWord, event.target.error)
+      }
+    })
   })
-
-  document.getElementById("ttransto").innerText = target
-  return result
 }
-
 // --- Move menu logic ---
 async function handleMoveMenu(e) {
   const sourceEl = document.getElementById("tsource")
@@ -1196,9 +1221,9 @@ async function GenerateSpecialList(
   const store = tx.objectStore("vocabulary")
 
   result.forEach((item) => {
-    const newKey = item.key + uniqueKeyChar
+    const newVocabWord = item.vocabWord + uniqueKeyChar
     store.put({
-      key: newKey,
+      vocabWord: newVocabWord,
       value: item.value,
       lection: outputLection,
       weight: item.weight || 1,
@@ -1209,5 +1234,4 @@ async function GenerateSpecialList(
 
   return result
 }
-
 initDB()
