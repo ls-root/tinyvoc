@@ -338,6 +338,7 @@ async function handleGitMenu(e) {
   // git menu selection
   if (gitState === "select") {
     if (e.key === "i" || e.key === "I") {
+      document.getElementById("gitlog").innerText = ""
       try {
         const isInitialized = await readGit("git")
         if (isInitialized) {
@@ -354,6 +355,7 @@ async function handleGitMenu(e) {
         setGitFooter("Failed to initialize Git")
       }
     } else if (e.key === "a" || e.key === "A") {
+      document.getElementById("gitlog").innerText = ""
       try {
         const isInitialized = await readGit("git")
         if (!isInitialized) {
@@ -404,6 +406,7 @@ async function handleGitMenu(e) {
         setGitFooter("Failed to add file")
       }
     } else if (e.key === "c" || e.key === "C") {
+      document.getElementById("gitlog").innerText = ""
       try {
         const isInitialized = await readGit("git")
         if (!isInitialized) {
@@ -466,6 +469,28 @@ async function handleGitMenu(e) {
         console.error("Commit failed:", error)
         setGitFooter("Commit failed")
       }
+    } else if (e.key === "l" || e.key === "L") {
+      const commits = await readGit("commits")
+      document.getElementById("gitlog").innerText = ""
+      commits.forEach((item) => {
+        const log1 = document.createElement("p")
+        const log2 = document.createElement("p")
+        const br1 = document.createElement("br")
+        const log4 = document.createElement("p")
+        const br2 = document.createElement("br")
+
+        log1.innerText = "commit " + item.hash
+        log1.style.color = "orange" // mimick git style
+        log2.innerText = "Date: " + new Date(item.time).toString().slice(0, 24)
+        log4.innerText = item.message
+        log4.style.marginLeft = "20px"
+
+        document.getElementById("gitlog").appendChild(log1)
+        document.getElementById("gitlog").appendChild(log2)
+        document.getElementById("gitlog").appendChild(br1)
+        document.getElementById("gitlog").appendChild(log4)
+        document.getElementById("gitlog").appendChild(br2)
+      })
     }
   }
 }
@@ -505,7 +530,7 @@ function gitTextField(prefix) {
         document.removeEventListener("keydown", textFieldHandler)
         resolve(value)
         e.preventDefault()
-      } else if (e.key === "Escape") {
+      } else if (e.key === "Escape" || e.key === "-") {
         cleanupTextField()
         document.removeEventListener("keydown", textFieldHandler)
         resolve(null)
