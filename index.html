@@ -21,9 +21,37 @@
             <p><strong>M</strong>ove List</p>
             <p><strong>L</strong>ections View</p>
             <p><strong>C</strong>orrect vocabulary</p>
-            <p><strong>S</strong>ettings</p>
+            <p><strong>S</strong>tatus of Git</p>
+            <p>Git i<strong>n</strong>tegratoin</p>
             <p id="vocfooter"></p>
             <p>Your Selection: <strong id="selection"></strong></p>
+        </div>
+
+        <div id="sm" style="display: none;">
+            <p id="statusheader"></p>
+            <p>Press <strong>-</strong> to return to the main menu</p>
+            <p id="statusfooter"></p>
+            <p>Git is <strong id="gitstatus">Disabled</strong></p>
+            <div id="ifgit" style="display: none;">
+                <p>Untracked files:</p>
+                <div id="untracked">
+
+                </div>
+                <!-- will be added by js-->
+            </div>
+        </div>
+
+        <div id="nm" style="display: none;">
+            <p id="githeader"></p>
+            <p><strong>i</strong>nit</p>
+            <p><strong>a</strong>dd</p>
+            <p><strong>c</strong>ommit</p>
+            <p>Press <strong>-</strong> to return to the main menu</p>
+            <p id="gitfooter"></p>
+            <p id="gitparamf" style="display: none;">
+                <span id="gitparam">file</span>:
+                <strong id="gitparamv">lection</strong>
+            </p>
         </div>
 
         <div id="cm" style="display: none;">

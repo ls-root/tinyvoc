@@ -19,6 +19,8 @@ let currentDestinationValue = ""
 let selectedLection = ""
 let generateState = "transform"
 let moveState = "source"
+let gitState = "select"
+let currentGitValue = ""
 let dataToTrain = []
 let shuffledKeys = []
 let uniqueKeyChar = " "
@@ -73,6 +75,10 @@ document.addEventListener("keydown", async (e) => {
     "L",
     "c",
     "C",
+    "n",
+    "N",
+    "s",
+    "S",
     "-",
     "Enter",
   ].includes(e.key)
@@ -99,6 +105,10 @@ document.addEventListener("keydown", async (e) => {
       showLectionsMenu()
     } else if (e.key === "c" || e.key === "C") {
       showCorrectMenu()
+    } else if (e.key === "n" || e.key === "N") {
+      showGitMenu()
+    } else if (e.key === "s" || e.key === "S") {
+      showStatusMenu()
     }
   }
 
@@ -112,6 +122,8 @@ document.addEventListener("keydown", async (e) => {
     hideLectionsMenu()
     hideCorrectMenu()
     showMainMenu()
+    hideGitMenu()
+    hideStatusMenu()
     sel.innerText = ""
   }
 
@@ -132,9 +144,36 @@ document.addEventListener("keydown", async (e) => {
 
   // CORRECT MENU
   if (menu === "cm") handleCorrectMenu(e)
+
+  // GIT STATUS MENU
+  if (menu === "sm") handleStatusMenu()
+
+  // GIT MENU
+  if (menu === "nm") handleGitMenu(e)
 })
 
 // ——— Menu show/hide helpers ———
+
+function showStatusMenu() {
+  hideMainMenu()
+  document.getElementById("sm").style.display = "block"
+  menu = "sm"
+}
+
+function hideStatusMenu() {
+  document.getElementById("sm").style.display = "none"
+}
+
+function showGitMenu() {
+  hideMainMenu()
+  document.getElementById("nm").style.display = "block"
+  document.getElementById("gitfooter").innerText = mkbanner("", 45, "-")
+  menu = "nm"
+}
+
+function hideGitMenu() {
+  document.getElementById("nm").style.display = "none"
+}
 
 function showMainMenu() {
   document.getElementById("mm").style.display = "block"
@@ -172,6 +211,7 @@ function showAddMenu() {
   hideViewMenu()
   hideMoveMenu()
   hideCorrectMenu()
+  hideGitMenu()
   document.getElementById("am").style.display = "block"
   menu = "am"
   addstate = "lection"
@@ -221,8 +261,6 @@ async function showLectionsMenu() {
       totalWrong += wrong
       totalVocabulary++
     })
-
-
 
     const p = document.createElement("p")
     p.innerText = `${item} - Success Score: ${totalAttempts / totalVocabulary} - Correctnessqoute: ${totalRight / totalVocabulary * 10}%`
@@ -293,6 +331,235 @@ async function showViewMenu() {
   const ilectionSelect = document.getElementById("ilectionSelect")
   ilectionSelect.innerText = ""
   ilectionSelect.style.color = "blue"
+}
+
+// ——— Git menu logic ———  
+async function handleGitMenu(e) {
+  // git menu selection
+  if (gitState === "select") {
+    if (e.key === "i" || e.key === "I") {
+      try {
+        const isInitialized = await readGit("git")
+        if (isInitialized) {
+          setGitFooter("Git is already initialized")
+        } else {
+          // init
+          await writeGit("git", true)
+          await writeGit("trackedFiles", JSON.stringify([]))
+          await writeGit("commits", JSON.stringify([]))
+          setGitFooter("Initialized Git")
+        }
+      } catch (error) {
+        console.error("Git initialization error:", error)
+        setGitFooter("Failed to initialize Git")
+      }
+    } else if (e.key === "a" || e.key === "A") {
+      try {
+        const isInitialized = await readGit("git")
+        if (!isInitialized) {
+          setGitFooter("Git not initialized.")
+          return
+        }
+
+        const trackedFilesJson = await readGit("trackedFiles")
+        let trackedFiles = []
+
+        // Parse JSON safely
+        if (trackedFilesJson) {
+          try {
+            trackedFiles = JSON.parse(trackedFilesJson)
+          } catch (parseError) {
+            console.warn("Invalid trackedFiles JSON, starting with empty array")
+            trackedFiles = []
+          }
+        }
+
+        const newFile = await gitTextField("file")
+
+        // Validate input
+        if (newFile === null || newFile.trim() === "") {
+          setGitFooter("File add cancelled")
+          return
+        }
+
+        // Check if file (lection) exists
+        const allLections = await readAllLections()
+        if (!allLections.includes(newFile)) {
+          setGitFooter(`File '${newFile}' does not exist`)
+          return
+        }
+
+        // Check for duplicates
+        if (trackedFiles.includes(newFile)) {
+          setGitFooter(`'${newFile}' already tracked`)
+          return
+        }
+
+        trackedFiles.push(newFile)
+        await writeGit("trackedFiles", JSON.stringify(trackedFiles))
+        setGitFooter(`Added '${newFile}'`)
+
+      } catch (error) {
+        console.error("Failed to add file to tracking:", error)
+        setGitFooter("Failed to add file")
+      }
+    } else if (e.key === "c" || e.key === "C") {
+      try {
+        const isInitialized = await readGit("git")
+        if (!isInitialized) {
+          setGitFooter("Git not initialized.")
+          return
+        }
+
+        const commitMessage = await gitTextField("Commit Message")
+        if (!commitMessage?.trim()) {
+          setGitFooter("Commit cancelled")
+          return
+        }
+
+        let trackedFiles = await readGit("trackedFiles")
+        if (typeof trackedFiles === 'string') {
+          try { trackedFiles = JSON.parse(trackedFiles) } catch { trackedFiles = [] }
+        }
+        if (!Array.isArray(trackedFiles)) trackedFiles = []
+
+        if (trackedFiles.length === 0) {
+          setGitFooter("Nothing to commit")
+          return
+        }
+
+        const trackedDataPromises = trackedFiles.map(lectionName => readLectionData(lectionName))
+        const trackedDataArrays = await Promise.all(trackedDataPromises)
+        const trackedVocabularyData = trackedDataArrays.flat()
+
+        const commitHash = toHash(JSON.stringify(trackedVocabularyData) + commitMessage + Date.now())
+
+        // Ensure commits is always an array
+        let commits = await readGit("commits")
+
+        if (typeof commits === 'string') {
+          try {
+            commits = JSON.parse(commits)
+          } catch {
+            commits = []
+          }
+        }
+
+        if (!Array.isArray(commits)) {
+          commits = []
+        }
+
+        commits.push({
+          hash: commitHash,
+          message: commitMessage,
+          time: Date.now(),
+          files: trackedFiles,
+          entryCount: trackedVocabularyData.length
+        })
+
+        await writeGit("commits", commits)
+        await writeGit(commitHash, trackedVocabularyData)
+
+        setGitFooter(`Committed: ${commitHash.substring(0, 7)}`)
+
+      } catch (error) {
+        console.error("Commit failed:", error)
+        setGitFooter("Commit failed")
+      }
+    }
+  }
+}
+
+function toHash(str) {
+  let hash = 5381
+  for (let i = 0; i < str.length; i++) {
+    hash = (hash * 33) ^ str.charCodeAt(i)
+  }
+  return (hash >>> 0).toString(16).substring(0, 7)
+}
+
+function gitTextField(prefix) {
+  return new Promise((resolve) => {
+    const paramm = document.getElementById("gitparamf")
+    const paramText = document.getElementById("gitparam")
+    const paramValue = document.getElementById("gitparamv")
+
+    const originalGitState = gitState
+
+    gitState = "textField"
+    paramm.style.display = "block"
+    paramText.innerText = prefix
+    paramValue.innerText = ""
+    currentGitValue = ""
+
+    const textFieldHandler = (e) => {
+      if (gitState !== "textField") return
+
+      if (e.key === "Backspace") {
+        currentGitValue = currentGitValue.slice(0, -1)
+        paramValue.innerText = currentGitValue
+        e.preventDefault()
+      } else if (e.key === "Enter") {
+        const value = currentGitValue
+        cleanupTextField()
+        document.removeEventListener("keydown", textFieldHandler)
+        resolve(value)
+        e.preventDefault()
+      } else if (e.key === "Escape") {
+        cleanupTextField()
+        document.removeEventListener("keydown", textFieldHandler)
+        resolve(null)
+        e.preventDefault()
+      } else if (e.key.length === 1) {
+        currentGitValue += e.key
+        paramValue.innerText = currentGitValue
+        e.preventDefault()
+      }
+    }
+
+    const cleanupTextField = () => {
+      gitState = originalGitState
+      paramm.style.display = "none"
+      paramText.innerText = ""
+      paramValue.innerText = ""
+      currentGitValue = ""
+    }
+
+    // Add event listener for text field
+    document.addEventListener("keydown", textFieldHandler)
+  })
+}
+function setGitFooter(msg) {
+  document.getElementById("gitfooter").innerText = mkbanner(msg, 45, "-")
+}
+
+// ——— Git Status menu logic ———
+async function handleStatusMenu() {
+  let gitState = false
+  if (await readGit("git")) {
+    gitState = true
+    document.getElementById("gitstatus").innerText = "Enabled"
+    document.getElementById("ifgit").style.display = "block"
+    // Render untrackedFiles
+    const trackedFilesJson = await readGit("trackedFiles")
+    const trackedFiles = trackedFilesJson ? trackedFilesJson : []
+    const allFiles = await readAllLections()
+    const untrackedFiles = allFiles.filter(file => !trackedFiles.includes(file))
+    console.log(untrackedFiles)
+
+    document.getElementById("untracked").innerHTML = ""
+    untrackedFiles.forEach((item) => {
+      const untrackedFileElement = document.createElement("p")
+      untrackedFileElement.innerText = item
+      untrackedFileElement.style.marginLeft = "20px"
+      untrackedFileElement.style.color = "red"
+      document.getElementById("untracked").appendChild(untrackedFileElement)
+    })
+  } else {
+    gitState = false
+    document.getElementById("gitstatus").innerText = "Disabled"
+    document.getElementById("ifgit").style.display = "none"
+  }
 }
 
 // ——— Correct menu logic ———
@@ -939,63 +1206,34 @@ function mkbanner(text, width, sep) {
   return sep.repeat(l) + text + sep.repeat(r)
 }
 
-document.getElementById("correctbanner").innerText = mkbanner(
-  "Correct vocabulary",
-  45,
-  "-",
-)
-document.getElementById("correctfooter").innerText = mkbanner("", 45, "-")
-document.getElementById("statsbanner").innerText = mkbanner(
-  "Training Statistics",
-  45,
-  "=",
-)
-document.getElementById("statsfooter").innerText = mkbanner("", 45, "=")
+document.getElementById("statusheader").innerText = mkbanner("Git Status", 45, "-")
+document.getElementById("correctbanner").innerText = mkbanner("Correct vocabulary", 45, "-")
+document.getElementById("statsbanner").innerText = mkbanner("Training Statistics", 45, "=")
 document.getElementById("vocbanner").innerText = mkbanner("TinyVoc", 45, "-")
-document.getElementById("addbanner").innerText = mkbanner(
-  "Add vocabulary",
-  45,
-  "-",
-)
-// IDK if this is really "prettier"
-document.getElementById("trainbanner").innerText = mkbanner(
-  "Train vocabulary",
-  45,
-  "-",
-)
-document.getElementById("viewbanner").innerText = mkbanner(
-  "View vocabulary",
-  45,
-  "-",
-)
-document.getElementById("printfooter").innerText = mkbanner(
-  "Generated by TinyVoc",
-  50,
-  "-",
-)
-document.getElementById("generateheader").innerText = mkbanner(
-  "Generate List",
-  45,
-  "-",
-)
-document.getElementById("lectionviewheader").innerText = mkbanner(
-  "Lection View",
-  45,
-  "-",
-)
+document.getElementById("addbanner").innerText = mkbanner("Add vocabulary", 45, "-")
+document.getElementById("trainbanner").innerText = mkbanner("Train vocabulary", 45, "-")
+document.getElementById("viewbanner").innerText = mkbanner("View vocabulary", 45, "-")
+document.getElementById("printfooter").innerText = mkbanner("Generated by TinyVoc", 50, "-")
+document.getElementById("generateheader").innerText = mkbanner("Generate List", 45, "-")
+document.getElementById("lectionviewheader").innerText = mkbanner("Lection View", 45, "-")
 document.getElementById("moveheader").innerText = mkbanner("Move List", 45, "-")
+document.getElementById("statsfooter").innerText = mkbanner("", 45, "=")
 document.getElementById("movefooter").innerText = mkbanner("", 45, "-")
+document.getElementById("correctfooter").innerText = mkbanner("", 45, "-")
 document.getElementById("vocfooter").innerText = mkbanner("", 45, "-")
+document.getElementById("statusfooter").innerText = mkbanner("", 45, "-")
 document.getElementById("addfooter").innerText = mkbanner("", 45, "-")
 document.getElementById("viewfooter").innerText = mkbanner("", 45, "-")
 document.getElementById("generatefooter").innerText = mkbanner("", 45, "-")
 document.getElementById("trainfooter").innerText = mkbanner("0/0", 45, "-")
 document.getElementById("lectionviewfooter").innerText = mkbanner("", 45, "-")
+document.getElementById("githeader").innerText = mkbanner("Git", 45, "-")
+document.getElementById("gitfooter").innerText = mkbanner("", 45, "-")
 
 // ——— IndexedDB & data helpers ———
 
 function initDB() {
-  const req = indexedDB.open("vocTrainerDB", 3)
+  const req = indexedDB.open("vocTrainerDB", 4)
   req.onupgradeneeded = (e) => {
     db = e.target.result
 
@@ -1010,8 +1248,14 @@ function initDB() {
 
     vocabStore.createIndex("vocabWord", "vocabWord", { unique: true })
 
+    // Config table
     if (!db.objectStoreNames.contains("config")) {
       db.createObjectStore("config", { keyPath: "key" })
+    }
+
+    // Git table
+    if (!db.objectStoreNames.contains("git")) {
+      db.createObjectStore("git", { keyPath: "key" })
     }
   }
   req.onsuccess = async (e) => {
@@ -1024,7 +1268,6 @@ function initDB() {
   }
   req.onerror = (e) => console.log("DB error", e)
 }
-
 function writeData(vocabWord, value, lection) {
   if (!db) return
   const tx = db.transaction("vocabulary", "readwrite")
@@ -1037,6 +1280,69 @@ function writeData(vocabWord, value, lection) {
     wrong: 0,
     right: 0,
     // id will be auto-generated
+  })
+}
+
+function writeGit(key, value) {
+  return new Promise((resolve, reject) => {
+    if (!db) return reject("Database not available")
+
+    const tx = db.transaction("git", "readwrite")
+    const store = tx.objectStore("git")
+    const request = store.put({ key, value })
+
+    request.onsuccess = () => {
+      console.log(`Git entry written: ${key} = ${value}`)
+      resolve()
+    }
+
+    request.onerror = () => {
+      console.error(`Failed to write git entry: ${key}`, request.error)
+      reject(request.error)
+    }
+  })
+}
+
+function readGit(key) {
+  return new Promise((resolve, reject) => {
+    if (!db) return reject("Database not available")
+
+    const tx = db.transaction("git", "readonly")
+    const store = tx.objectStore("git")
+    const request = store.get(key)
+
+    request.onsuccess = () => {
+      const result = request.result
+      if (result) {
+        resolve(result.value)
+      } else {
+        resolve(null) // Key not found
+      }
+    }
+
+    request.onerror = () => {
+      console.error(`Failed to read git entry: ${key}`, request.error)
+      reject(request.error)
+    }
+  })
+}
+
+function readAllGit() {
+  return new Promise((resolve, reject) => {
+    if (!db) return reject("Database not available")
+
+    const tx = db.transaction("git", "readonly")
+    const store = tx.objectStore("git")
+    const request = store.getAll()
+
+    request.onsuccess = () => {
+      resolve(request.result)
+    }
+
+    request.onerror = () => {
+      console.error("Failed to read all git entries", request.error)
+      reject(request.error)
+    }
   })
 }
 
