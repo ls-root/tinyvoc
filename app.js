@@ -491,6 +491,60 @@ async function handleGitMenu(e) {
         document.getElementById("gitlog").appendChild(log4)
         document.getElementById("gitlog").appendChild(br2)
       })
+    } else if (e.key === "h" || e.key === "H") {
+      document.getElementById("gitlog").innerText = ""
+      const inputHash = await gitTextField("commit hash")
+      if (!inputHash || inputHash.trim() === "") {
+        setGitFooter("cherry-pick cancelled")
+        return
+      }
+
+      const commits = await readGit("commits")
+      if (!Array.isArray(commits)) {
+        setGitFooter("No commits found")
+        return
+      }
+
+      let foundCommit = null
+      for (const commit of commits) {
+        if (commit.hash === inputHash || commit.hash.startsWith(inputHash)) {
+          foundCommit = commit
+          break
+        }
+      }
+
+      if (foundCommit) {
+        const commitData = await readGit(foundCommit.hash)
+        const currentData = await readAllData()
+
+        const commitDataString = JSON.stringify(commitData.sort((a, b) => a.id - b.id))
+        const currentDataString = JSON.stringify(currentData.sort((a, b) => a.id - b.id))
+
+        if (commitDataString !== currentDataString) {
+          const force = await gitTextField("Conflict! force? [y/n]")
+          if (!force || !["y", "n"].includes(force.toLowerCase().trim())) {
+            setGitFooter("Answer with 'y' or 'n'")
+            return
+          }
+
+          if (force.toLowerCase().trim() === "y") {
+            try {
+              await deleteAllData()
+              await importData(commitData)
+              setGitFooter(`Cherry-picked: ${foundCommit.hash.substring(0, 7)}`)
+            } catch (error) {
+              console.error("Cherry-pick failed:", error)
+              setGitFooter("Cherry-pick failed")
+            }
+          } else {
+            setGitFooter("Cherry-pick aborted")
+          }
+        } else {
+          setGitFooter("No differences")
+        }
+      } else {
+        setGitFooter(`Commit hash not found`)
+      }
     }
   }
 }
@@ -513,7 +567,7 @@ function gitTextField(prefix) {
 
     gitState = "textField"
     paramm.style.display = "block"
-    paramText.innerText = prefix
+    paramText.innerHTML = prefix // allows HTML injection
     paramValue.innerText = ""
     currentGitValue = ""
 
