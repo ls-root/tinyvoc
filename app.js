@@ -335,19 +335,29 @@ async function showViewMenu() {
 
 // ——— Git menu logic ———  
 async function handleGitMenu(e) {
-  // git menu selection
+  const clearUI = () => {
+    const branchList = document.getElementById("branchlist")
+    const gitLog = document.getElementById("gitlog")
+    if (branchList) branchList.innerHTML = ""
+    if (gitLog) gitLog.innerText = ""
+  }
+
   if (gitState === "select") {
     if (e.key === "i" || e.key === "I") {
-      document.getElementById("gitlog").innerText = ""
+      clearUI()
       try {
         const isInitialized = await readGit("git")
         if (isInitialized) {
           setGitFooter("Git is already initialized")
         } else {
-          // init
+          // Initialize git
           await writeGit("git", true)
-          await writeGit("trackedFiles", JSON.stringify([]))
-          await writeGit("commits", JSON.stringify([]))
+          await writeGit("trackedFiles", [])  // store as array, no JSON string
+          await writeGit("commits", [])
+          await writeGit("branches", ["master"])
+          await writeGit("currentBranch", "master")
+          // Save current DB state under branch_master (not branch_main due to your branch name)
+          await writeGit("branch_master", await readAllData())
           setGitFooter("Initialized Git")
         }
       } catch (error) {
@@ -355,7 +365,7 @@ async function handleGitMenu(e) {
         setGitFooter("Failed to initialize Git")
       }
     } else if (e.key === "a" || e.key === "A") {
-      document.getElementById("gitlog").innerText = ""
+      clearUI()
       try {
         const isInitialized = await readGit("git")
         if (!isInitialized) {
@@ -363,42 +373,29 @@ async function handleGitMenu(e) {
           return
         }
 
-        const trackedFilesJson = await readGit("trackedFiles")
-        let trackedFiles = []
-
-        // Parse JSON safely
-        if (trackedFilesJson) {
-          try {
-            trackedFiles = JSON.parse(trackedFilesJson)
-          } catch (parseError) {
-            console.warn("Invalid trackedFiles JSON, starting with empty array")
-            trackedFiles = []
-          }
-        }
+        let trackedFiles = await readGit("trackedFiles")
+        if (!Array.isArray(trackedFiles)) trackedFiles = []
 
         const newFile = await gitTextField("file")
 
-        // Validate input
         if (newFile === null || newFile.trim() === "") {
           setGitFooter("File add cancelled")
           return
         }
 
-        // Check if file (lection) exists
         const allLections = await readAllLections()
         if (!allLections.includes(newFile)) {
           setGitFooter(`File '${newFile}' does not exist`)
           return
         }
 
-        // Check for duplicates
         if (trackedFiles.includes(newFile)) {
           setGitFooter(`'${newFile}' already tracked`)
           return
         }
 
         trackedFiles.push(newFile)
-        await writeGit("trackedFiles", JSON.stringify(trackedFiles))
+        await writeGit("trackedFiles", trackedFiles)
         setGitFooter(`Added '${newFile}'`)
 
       } catch (error) {
@@ -406,7 +403,7 @@ async function handleGitMenu(e) {
         setGitFooter("Failed to add file")
       }
     } else if (e.key === "c" || e.key === "C") {
-      document.getElementById("gitlog").innerText = ""
+      clearUI()
       try {
         const isInitialized = await readGit("git")
         if (!isInitialized) {
@@ -421,9 +418,6 @@ async function handleGitMenu(e) {
         }
 
         let trackedFiles = await readGit("trackedFiles")
-        if (typeof trackedFiles === 'string') {
-          try { trackedFiles = JSON.parse(trackedFiles) } catch { trackedFiles = [] }
-        }
         if (!Array.isArray(trackedFiles)) trackedFiles = []
 
         if (trackedFiles.length === 0) {
@@ -437,20 +431,8 @@ async function handleGitMenu(e) {
 
         const commitHash = toHash(JSON.stringify(trackedVocabularyData) + commitMessage + Date.now())
 
-        // Ensure commits is always an array
         let commits = await readGit("commits")
-
-        if (typeof commits === 'string') {
-          try {
-            commits = JSON.parse(commits)
-          } catch {
-            commits = []
-          }
-        }
-
-        if (!Array.isArray(commits)) {
-          commits = []
-        }
+        if (!Array.isArray(commits)) commits = []
 
         commits.push({
           hash: commitHash,
@@ -470,9 +452,12 @@ async function handleGitMenu(e) {
         setGitFooter("Commit failed")
       }
     } else if (e.key === "l" || e.key === "L") {
-      const commits = await readGit("commits")
-      document.getElementById("gitlog").innerText = ""
-      commits.forEach((item) => {
+      clearUI()
+      const commits = await readGit("commits") || []
+      const gitLog = document.getElementById("gitlog")
+      if (!gitLog) return;
+
+      commits.forEach(item => {
         const log1 = document.createElement("p")
         const log2 = document.createElement("p")
         const br1 = document.createElement("br")
@@ -485,14 +470,14 @@ async function handleGitMenu(e) {
         log4.innerText = item.message
         log4.style.marginLeft = "20px"
 
-        document.getElementById("gitlog").appendChild(log1)
-        document.getElementById("gitlog").appendChild(log2)
-        document.getElementById("gitlog").appendChild(br1)
-        document.getElementById("gitlog").appendChild(log4)
-        document.getElementById("gitlog").appendChild(br2)
+        gitLog.appendChild(log1)
+        gitLog.appendChild(log2)
+        gitLog.appendChild(br1)
+        gitLog.appendChild(log4)
+        gitLog.appendChild(br2)
       })
     } else if (e.key === "h" || e.key === "H") {
-      document.getElementById("gitlog").innerText = ""
+      clearUI()
       const inputHash = await gitTextField("commit hash")
       if (!inputHash || inputHash.trim() === "") {
         setGitFooter("cherry-pick cancelled")
@@ -517,8 +502,8 @@ async function handleGitMenu(e) {
         const commitData = await readGit(foundCommit.hash)
         const currentData = await readAllData()
 
-        const commitDataString = JSON.stringify(commitData.sort((a, b) => a.id - b.id))
-        const currentDataString = JSON.stringify(currentData.sort((a, b) => a.id - b.id))
+        const commitDataString = JSON.stringify(commitData.sort((a, b) => (a.id ?? 0) - (b.id ?? 0)))
+        const currentDataString = JSON.stringify(currentData.sort((a, b) => (a.id ?? 0) - (b.id ?? 0)))
 
         if (commitDataString !== currentDataString) {
           const force = await gitTextField("Conflict! force? [y/n]")
@@ -545,10 +530,121 @@ async function handleGitMenu(e) {
       } else {
         setGitFooter(`Commit hash not found`)
       }
+    } else if (e.key === "b" || e.key === "B") {
+      clearUI()
+      // branch submenu entry
+      gitState = "branch"
+    } else if (e.key === "e" || e.key === "E") {
+      clearUI()
+      const branchName = await gitTextField("branch name")
+      if (!branchName || !branchName.trim()) {
+        setGitFooter("Branch switch cancelled")
+        return
+      }
+      const branches = await readGit("branches") || []
+
+      if (!branches.includes(branchName)) {
+        setGitFooter(`Branch '${branchName}' does not exist`)
+        return
+      }
+
+      const currentBranch = await readGit("currentBranch")
+
+      if (currentBranch) {
+        const currentData = await readAllData()
+        await writeGit(`branch_${currentBranch}`, currentData)
+      }
+
+      const branchData = await readGit(`branch_${branchName}`)
+      if (branchData) {
+        await deleteAllData()
+        await importData(branchData)
+      }
+
+      await writeGit("currentBranch", branchName)
+      setGitFooter(`Switched to branch '${branchName}'`)
+    }
+  } else if (gitState === "branch") {
+    const branchListContainer = document.getElementById("branchlist")
+    if (branchListContainer) branchListContainer.innerHTML = ""
+
+    if (e.key === "c" || e.key === "C") {
+      const branchName = await gitTextField("branch name")
+      if (!branchName || !branchName.trim()) {
+        setGitFooter("Branch creation cancelled")
+        gitState = "select"
+        return
+      }
+
+      const branches = await readGit("branches") || []
+      if (branches.includes(branchName)) {
+        setGitFooter(`Branch '${branchName}' already exists`)
+        gitState = "select"
+        return
+      }
+
+      // Save current data before creating a new branch variable to store current state
+      const currentData = await readAllData()
+
+      branches.push(branchName)
+      await writeGit("branches", branches)
+      await writeGit(`branch_${branchName}`, currentData)
+
+      setGitFooter(`Created branch '${branchName}'`)
+      gitState = "select"
+    } else if (e.key === "l" || e.key === "L") {
+      const branches = await readGit("branches") || []
+      const currentBranch = await readGit("currentBranch") || "main"
+
+      const branchListContainer = document.getElementById("branchlist")
+      if (branchListContainer) branchListContainer.innerHTML = ""
+
+      for (const branch of branches) {
+        const marker = branch === currentBranch ? "* " : "  "
+        const branchElement = document.createElement("p")
+        branchElement.innerText = `${marker}${branch}`
+        branchListContainer.appendChild(branchElement)
+      }
+    } else if (e.key === "d" || e.key === "D") {
+      const branchName = await gitTextField("branch name")
+      if (!branchName || !branchName.trim()) {
+        setGitFooter("Branch deletion cancelled")
+        gitState = "select"
+        return
+      }
+      const branches = await readGit("branches") || []
+      const currentBranch = await readGit("currentBranch")
+
+      if (branchName === "main" || branchName === "master") {
+        setGitFooter("Cannot delete main or master branch")
+        gitState = "select"
+        return
+      }
+
+      if (branchName === currentBranch) {
+        setGitFooter("Cannot delete current branch")
+        gitState = "select"
+        return
+      }
+
+      if (!branches.includes(branchName)) {
+        setGitFooter(`Branch '${branchName}' does not exist`)
+        gitState = "select"
+        return
+      }
+
+      const updatedBranches = branches.filter(b => b !== branchName)
+      await writeGit("branches", updatedBranches)
+      await writeGit(`branch_${branchName}`, null)
+
+      setGitFooter(`Deleted branch '${branchName}'`)
+      gitState = "select"
+    } else if (e.key === "Escape") {
+      gitState = "select"
+      setGitFooter("Back to git menu")
     }
   }
 }
-
 function toHash(str) {
   let hash = 5381
   for (let i = 0; i < str.length; i++) {
@@ -1121,6 +1217,23 @@ async function nextQuestion() {
       45,
       "-",
     )
+
+    const lectionData = await readLectionData(currentLectionValue)
+
+    let totalAttempts = 0
+    let totalVocabulary = 0
+    let totalWrong = 0
+    let totalRight = 0
+
+    lectionData.forEach(word => {
+      const right = word.right || 0
+      const wrong = word.wrong || 0
+      totalAttempts += (right + wrong)
+      totalRight += right
+      totalWrong += wrong
+      totalVocabulary++
+    })
+
     document.getElementById("tkey").innerText = ""
     document.getElementById("tvalue").innerText = ""
 
@@ -1131,6 +1244,8 @@ async function nextQuestion() {
     document.getElementById("s2").innerText = trainStats.totalWrong
     document.getElementById("s3").innerText = trainStats.hardestWord.key
     document.getElementById("s4").innerText = trainStats.hardestWord.attempts
+    document.getElementById("s5").innerText = totalAttempts / totalVocabulary
+    document.getElementById("s6").innerText = totalRight / totalVocabulary
 
     console.log("=== Training Statistics ===")
     console.log(`Total Correct: ${trainStats.totalCorrect}`)
@@ -1895,8 +2010,8 @@ async function GenerateSpecialList(
       value: item.value,
       lection: outputLection,
       weight: item.weight || 1,
-      wrong: item.wrong || 0,
-      right: item.right || 0,
+      wrong: 0,
+      right: 0,
     })
   })
 
