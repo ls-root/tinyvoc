@@ -13,6 +13,7 @@ let currentSourceValue = ""
 let correctState = "lection"
 let currentLectionCValue = ""
 let currentIdCValue = ""
+let currentSMTPValue = ""
 let currentKeyCValue = ""
 let currentValueCValue = ""
 let currentDestinationValue = ""
@@ -20,6 +21,7 @@ let selectedLection = ""
 let generateState = "transform"
 let moveState = "source"
 let gitState = "select"
+let smtpState = "host"
 let currentGitValue = ""
 let dataToTrain = []
 let shuffledKeys = []
@@ -28,6 +30,7 @@ let trainstate = "lection"
 let wrongAttempts = new Map()
 let currentKey = ""
 let db
+let currentSessionScore = 0
 let AvabialeModes = Array.from({ length: 5 }, (e, i) => i)
 let trainStats = {
   totalCorrect: 0,
@@ -79,6 +82,8 @@ document.addEventListener("keydown", async (e) => {
     "N",
     "s",
     "S",
+    "p",
+    "P",
     "-",
     "Enter",
   ].includes(e.key)
@@ -109,11 +114,14 @@ document.addEventListener("keydown", async (e) => {
       showGitMenu()
     } else if (e.key === "s" || e.key === "S") {
       showStatusMenu()
+    } else if (e.key === "p" || e.key === "P") {
+      showSMTPMenu()
     }
   }
 
   // BACK TO MAIN
   if (e.key === "-") {
+    hideSMTPMenu()
     hideAddMenu()
     hideTrainMenu()
     hideViewMenu()
@@ -150,6 +158,9 @@ document.addEventListener("keydown", async (e) => {
 
   // GIT MENU
   if (menu === "nm") handleGitMenu(e)
+
+  // SMTP SETUP MENU
+  if (menu === "pm") handleSMTPMenu(e)
 })
 
 // ——— Menu show/hide helpers ———
@@ -171,6 +182,15 @@ function showGitMenu() {
   menu = "nm"
 }
 
+function showSMTPMenu() {
+  hideMainMenu()
+  document.getElementById("pm").style.display = "block"
+  menu = "pm"
+}
+
+function hideSMTPMenu() {
+  document.getElementById("pm").style.display = "none"
+}
 function hideGitMenu() {
   document.getElementById("nm").style.display = "none"
 }
@@ -263,7 +283,7 @@ async function showLectionsMenu() {
     })
 
     const p = document.createElement("p")
-    p.innerText = `${item} - Success Score: ${totalAttempts / totalVocabulary} - Correctnessqoute: ${totalRight / totalVocabulary * 10}%`
+    p.innerText = `${item} - Average Attempt: ${(totalAttempts / totalVocabulary).toFixed(2)} - Last Success Score: ${await readGP(item + "_success")}%`
     document.getElementById("lectionview").appendChild(p)
   }
   menu = "lm"
@@ -333,6 +353,181 @@ async function showViewMenu() {
   ilectionSelect.style.color = "blue"
 }
 
+// ——— SMTP menu logic ———
+async function handleSMTPMenu(e) {
+  if (smtpState === "host") {
+    try {
+      const useCredentialEncryption = await SMTPTextField("Use AES-256 Encryption for Credentials (y/n)")
+      if (useCredentialEncryption === null) return
+
+      const encryptChoice = useCredentialEncryption.toLowerCase().trim()
+      if (!['y', 'n', 'yes', 'no'].includes(encryptChoice)) {
+        document.getElementById("smtpstatus").innerText = "Invalid choice. Please enter y/n"
+        document.getElementById("smtpstatus").style.color = "red"
+        return
+      }
+
+      let credentialEncryptionPassword = null
+
+      if (['y', 'yes'].includes(encryptChoice)) {
+        credentialEncryptionPassword = await SMTPTextField("Password to Encrypt Credentials")
+        if (credentialEncryptionPassword === null) return
+
+        if (!credentialEncryptionPassword.trim()) {
+          document.getElementById("smtpstatus").innerText = "Encryption password cannot be empty"
+          document.getElementById("smtpstatus").style.color = "red"
+          return
+        }
+        if (credentialEncryptionPassword.length < 8) {
+          document.getElementById("smtpstatus").innerText = "Encryption password must be at least 8 characters"
+          document.getElementById("smtpstatus").style.color = "red"
+          return
+        }
+      }
+
+      const host = await SMTPTextField("SMTP Host (e.g., smtp.gmail.com)")
+      if (host === null) return
+
+      if (!host.trim()) {
+        document.getElementById("smtpstatus").innerText = "SMTP Host cannot be empty"
+        document.getElementById("smtpstatus").style.color = "red"
+        return
+      }
+
+      const hostRegex = /^[a-zA-Z0-9]([a-zA-Z0-9\-]{0,61}[a-zA-Z0-9])?(\.[a-zA-Z0-9]([a-zA-Z0-9\-]{0,61}[a-zA-Z0-9])?)*$/
+      if (!hostRegex.test(host.trim())) {
+        document.getElementById("smtpstatus").innerText = "Invalid SMTP Host format"
+        document.getElementById("smtpstatus").style.color = "red"
+        return
+      }
+
+      const portStr = await SMTPTextField("SMTP Port (e.g., 587, 465, 25)")
+      if (portStr === null) return
+
+      const port = parseInt(portStr.trim())
+      if (isNaN(port) || port < 1 || port > 65535) {
+        document.getElementById("smtpstatus").innerText = "Port must be a number between 1 and 65535"
+        document.getElementById("smtpstatus").style.color = "red"
+        return
+      }
+
+      const username = await SMTPTextField("Username/Email")
+      if (username === null) return
+
+      if (!username.trim()) {
+        document.getElementById("smtpstatus").innerText = "Username cannot be empty"
+        document.getElementById("smtpstatus").style.color = "red"
+        return
+      }
+
+      const password = await SMTPTextField("Password")
+      if (password === null) return
+
+      if (!password.trim()) {
+        document.getElementById("smtpstatus").innerText = "Password cannot be empty"
+        document.getElementById("smtpstatus").style.color = "red"
+        return
+      }
+
+      const encryption = await SMTPTextField("Encryption (tls/ssl/none)")
+      if (encryption === null) return
+
+      const encryptionLower = encryption.toLowerCase().trim()
+      if (!['tls', 'ssl', 'none'].includes(encryptionLower)) {
+        document.getElementById("smtpstatus").innerText = "Encryption must be: tls, ssl, or none"
+        document.getElementById("smtpstatus").style.color = "red"
+        return
+      }
+
+      const from = await SMTPTextField("From Email Address")
+      if (from === null) return
+
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+      if (!emailRegex.test(from.trim())) {
+        document.getElementById("smtpstatus").innerText = "Invalid 'From' email address format"
+        document.getElementById("smtpstatus").style.color = "red"
+        return
+      }
+
+      const to = await SMTPTextField("To Email Address")
+      if (to === null) return
+
+      if (!emailRegex.test(to.trim())) {
+        document.getElementById("smtpstatus").innerText = "Invalid 'To' email address format"
+        document.getElementById("smtpstatus").style.color = "red"
+        return
+      }
+
+      const smtpConfig = {
+        host: host.trim(),
+        port: port,
+        username: username.trim(),
+        password: password,
+        encryption: encryptionLower,
+        from: from.trim(),
+        to: to.trim(),
+        useEncryption: ['y', 'yes'].includes(encryptChoice),
+        encryptionPassword: credentialEncryptionPassword
+      }
+
+
+    } catch (error) {
+      document.getElementById("smtpstatus").innerText = "Configuration failed: " + error.message
+      document.getElementById("smtpstatus").style.color = "red"
+      smtpState = "host" // Reset state on error
+    }
+  }
+}
+function SMTPTextField(prefix) {
+  return new Promise((resolve) => {
+    const paramm = document.getElementById("smtpparamf")
+    const paramText = document.getElementById("smtpparam")
+    const paramValue = document.getElementById("smtpparamv")
+
+    const originalSMTPState = smtpState
+    smtpState = "textField"
+
+    paramm.style.display = "flex"
+    paramText.innerHTML = prefix // allowing HTML injection
+    paramValue.innerText = ""
+    currentSMTPValue = ""
+
+    const textFieldHandler = (e) => {
+      if (menu !== "pm" || smtpState !== "textField") return
+
+      if (e.key === "Backspace") {
+        currentSMTPValue = currentSMTPValue.slice(0, -1)
+        paramValue.innerText = currentSMTPValue
+        e.preventDefault()
+      } else if (e.key === "Enter") {
+        const value = currentSMTPValue
+        cleanupTextField()
+        document.removeEventListener("keydown", textFieldHandler)
+        resolve(value)
+        e.preventDefault()
+      } else if (e.key === "Escape" || e.key === "-") {
+        cleanupTextField()
+        document.removeEventListener("keydown", textFieldHandler)
+        resolve(null)
+        e.preventDefault()
+      } else if (e.key.length === 1) {
+        currentSMTPValue += e.key
+        paramValue.innerText = currentSMTPValue
+        e.preventDefault()
+      }
+    }
+
+    const cleanupTextField = () => {
+      smtpState = originalSMTPState
+      paramm.style.display = "none"
+      paramText.innerText = ""
+      paramValue.innerText = ""
+      currentSMTPValue = ""
+    }
+
+    document.addEventListener("keydown", textFieldHandler)
+  })
+}
 // ——— Git menu logic ———  
 async function handleGitMenu(e) {
   const clearUI = () => {
@@ -563,6 +758,45 @@ async function handleGitMenu(e) {
 
       await writeGit("currentBranch", branchName)
       setGitFooter(`Switched to branch '${branchName}'`)
+    } else if (e.key === "r" || e.key === "R") {
+      clearUI()
+      try {
+        const isInitialized = await readGit("git")
+        if (!isInitialized) {
+          setGitFooter("Git not initialized.")
+          return
+        }
+
+        let trackedFiles = await readGit("trackedFiles")
+        if (!Array.isArray(trackedFiles)) trackedFiles = []
+
+        const newFile = await gitTextField("file")
+
+        if (newFile === null || newFile.trim() === "") {
+          setGitFooter("File remove cancelled")
+          return
+        }
+
+        const allLections = await readAllLections()
+        if (!allLections.includes(newFile)) {
+          setGitFooter(`File does not exist`)
+          return
+        }
+
+        if (!trackedFiles.includes(newFile)) {
+          setGitFooter(`file is not tracked`)
+          return
+        }
+
+        const index = trackedFiles.indexOf(newFile)
+        trackedFiles.pop(index)
+        await writeGit("trackedFiles", trackedFiles)
+        setGitFooter(`Removed file`)
+
+      } catch (error) {
+        console.error("Failed to remove file from tracking:", error)
+        setGitFooter("Failed remove file")
+      }
     }
   } else if (gitState === "branch") {
     const branchListContainer = document.getElementById("branchlist")
@@ -715,12 +949,12 @@ async function handleStatusMenu() {
     gitState = true
     document.getElementById("gitstatus").innerText = "Enabled"
     document.getElementById("ifgit").style.display = "block"
+    document.getElementById("modifiedfiles").innerHTML = ""
     // Render untrackedFiles
     const trackedFilesJson = await readGit("trackedFiles")
     const trackedFiles = trackedFilesJson ? trackedFilesJson : []
     const allFiles = await readAllLections()
     const untrackedFiles = allFiles.filter(file => !trackedFiles.includes(file))
-    console.log(untrackedFiles)
 
     document.getElementById("untracked").innerHTML = ""
     untrackedFiles.forEach((item) => {
@@ -729,6 +963,38 @@ async function handleStatusMenu() {
       untrackedFileElement.style.marginLeft = "20px"
       untrackedFileElement.style.color = "red"
       document.getElementById("untracked").appendChild(untrackedFileElement)
+    })
+    // Get modified files
+    const commits = await readGit("commits") || []
+    if (commits.length === 0) return await readAllLections()
+
+    const lastCommitData = await readGit(commits[commits.length - 1].hash)
+    if (!lastCommitData) return []
+
+    const currentData = await readAllData()
+
+    const groupByLection = (data) =>
+      data.reduce((acc, item) => {
+        if (!acc[item.lection]) acc[item.lection] = []
+        acc[item.lection].push(item)
+        return acc
+      }, {})
+
+    const lastCommitByLection = groupByLection(lastCommitData)
+    const currentByLection = groupByLection(currentData)
+
+    const allLections = [...new Set([...Object.keys(lastCommitByLection), ...Object.keys(currentByLection)])]
+
+    const modifiedFiles = allLections.filter(lection =>
+      JSON.stringify(lastCommitByLection[lection] || []) !== JSON.stringify(currentByLection[lection] || [])
+    )
+    // render modified files
+    modifiedFiles.forEach((item) => {
+      const modifiedElement = document.createElement("p")
+      modifiedElement.innerText = "modified: " + item
+      modifiedElement.style.marginLeft = "20px"
+      modifiedElement.style.color = "red"
+      document.getElementById("modifiedfiles").appendChild(modifiedElement)
     })
   } else {
     gitState = false
@@ -1244,16 +1510,10 @@ async function nextQuestion() {
     document.getElementById("s2").innerText = trainStats.totalWrong
     document.getElementById("s3").innerText = trainStats.hardestWord.key
     document.getElementById("s4").innerText = trainStats.hardestWord.attempts
-    document.getElementById("s5").innerText = totalAttempts / totalVocabulary
-    document.getElementById("s6").innerText = totalRight / totalVocabulary
+    document.getElementById("s5").innerText = (totalAttempts / totalVocabulary).toFixed(2)
+    document.getElementById("s6").innerText = Math.round(currentSessionScore / totalVocabulary * 100)
 
-    console.log("=== Training Statistics ===")
-    console.log(`Total Correct: ${trainStats.totalCorrect}`)
-    console.log(`Total Wrong: ${trainStats.totalWrong}`)
-    console.log(
-      `Hardest Word: "${trainStats.hardestWord.key}" (${trainStats.hardestWord.attempts} wrong attempts)`,
-    )
-    console.log("===========================")
+    writeGP(currentLectionValue + "_success", Math.round(currentSessionScore / totalVocabulary * 100))
 
     return
   }
@@ -1303,15 +1563,25 @@ async function checkAnswer() {
 
   tvElt.style.color = isCorrect ? "green" : "red"
 
-  // Update database stats
+  const currentWrongAttempts = wrongAttempts.get(vocabWord) || 0
+
+  const newWrongAttempts = isCorrect ? currentWrongAttempts : currentWrongAttempts + 1
+
   const tx = db.transaction("vocabulary", "readwrite")
   const store = tx.objectStore("vocabulary")
   const index = store.index("vocabWord")
   const rq = index.get(vocabWord)
+
   rq.onsuccess = () => {
     const data = rq.result
     if (!data) return
+
     if (isCorrect) {
+      if (currentWrongAttempts === 0) {
+        currentSessionScore += 1
+      } else if (currentWrongAttempts === 1) {
+        currentSessionScore += 0.5
+      }
       data.right = (data.right || 0) + 1
       data.weight = Math.max(1, (data.weight || 1) - 1)
     } else {
@@ -1331,13 +1601,12 @@ async function checkAnswer() {
     }, 500)
   } else {
     trainStats.totalWrong++
-    const currentAttempts = wrongAttempts.get(vocabWord) || 0
-    const newAttempts = currentAttempts + 1
-    wrongAttempts.set(vocabWord, newAttempts)
+
+    wrongAttempts.set(vocabWord, newWrongAttempts)
 
     const maxAttempts = Math.max(
       trainStats.maxAttemptsPerWord.get(vocabWord) || 0,
-      newAttempts
+      newWrongAttempts
     )
     trainStats.maxAttemptsPerWord.set(vocabWord, maxAttempts)
 
@@ -1345,8 +1614,9 @@ async function checkAnswer() {
       trainStats.hardestWord = { key: vocabWord, attempts: maxAttempts }
     }
 
-    if (newAttempts >= 3) {
+    if (newWrongAttempts >= 3) {
       trainstate = "showingSolution"
+      currentSessionScore -= 1
       currentTValueValue = correctValue
       tvElt.innerText = correctValue
       tvElt.style.color = "yellow"
@@ -1374,6 +1644,7 @@ async function checkAnswer() {
     }
   }
 }
+
 // ——— Banner init ———
 
 function mkBannerProgress(text, width, sep, fillsep, fill) {
@@ -1401,6 +1672,7 @@ function mkbanner(text, width, sep) {
 }
 
 document.getElementById("statusheader").innerText = mkbanner("Git Status", 45, "-")
+document.getElementById("smtpheader").innerText = mkbanner("SMTP Setup", 45, "-")
 document.getElementById("correctbanner").innerText = mkbanner("Correct vocabulary", 45, "-")
 document.getElementById("statsbanner").innerText = mkbanner("Training Statistics", 45, "=")
 document.getElementById("vocbanner").innerText = mkbanner("TinyVoc", 45, "-")
@@ -1413,6 +1685,7 @@ document.getElementById("lectionviewheader").innerText = mkbanner("Lection View"
 document.getElementById("moveheader").innerText = mkbanner("Move List", 45, "-")
 document.getElementById("statsfooter").innerText = mkbanner("", 45, "=")
 document.getElementById("movefooter").innerText = mkbanner("", 45, "-")
+document.getElementById("smtpfooter").innerText = mkbanner("", 45, "-")
 document.getElementById("correctfooter").innerText = mkbanner("", 45, "-")
 document.getElementById("vocfooter").innerText = mkbanner("", 45, "-")
 document.getElementById("statusfooter").innerText = mkbanner("", 45, "-")
@@ -1451,6 +1724,11 @@ function initDB() {
     if (!db.objectStoreNames.contains("git")) {
       db.createObjectStore("git", { keyPath: "key" })
     }
+
+    // General Purpose table
+    if (!db.objectStoreNames.contains('GeneralPurpose')) {
+      db.createObjectStore('GeneralPurpose', { keyPath: 'key' })
+    }
   }
   req.onsuccess = async (e) => {
     db = e.target.result
@@ -1474,6 +1752,76 @@ function writeData(vocabWord, value, lection) {
     wrong: 0,
     right: 0,
     // id will be auto-generated
+  })
+}
+
+async function writeGP(key, value) {
+  return new Promise((resolve, reject) => {
+    try {
+      const tx = db.transaction(['GeneralPurpose'], 'readwrite')
+      const store = tx.objectStore('GeneralPurpose')
+
+      const data = {
+        key: key,
+        value: value,
+        timestamp: Date.now()
+      }
+
+      const request = store.put(data)
+
+      request.onsuccess = () => {
+        console.log(`GP: Saved ${key}`)
+        resolve(true)
+      }
+
+      request.onerror = () => {
+        console.error(`GP: Failed to save ${key}:`, request.error)
+        reject(request.error)
+      }
+
+      tx.onerror = () => {
+        console.error(`GP: Transaction failed for ${key}:`, tx.error)
+        reject(tx.error)
+      }
+
+    } catch (error) {
+      console.error(`GP: Error writing ${key}:`, error)
+      reject(error)
+    }
+  })
+}
+
+async function readGP(key) {
+  return new Promise((resolve, reject) => {
+    try {
+      const tx = db.transaction(['GeneralPurpose'], 'readonly')
+      const store = tx.objectStore('GeneralPurpose')
+      const request = store.get(key)
+
+      request.onsuccess = () => {
+        if (request.result) {
+          console.log(`GP: Retrieved ${key}`)
+          resolve(request.result.value)
+        } else {
+          console.log(`GP: Key ${key} not found`)
+          resolve(null)
+        }
+      }
+
+      request.onerror = () => {
+        console.error(`GP: Failed to read ${key}:`, request.error)
+        reject(request.error)
+      }
+
+      tx.onerror = () => {
+        console.error(`GP: Transaction failed for ${key}:`, tx.error)
+        reject(tx.error)
+      }
+
+    } catch (error) {
+      console.error(`GP: Error reading ${key}:`, error)
+      reject(error)
+    }
   })
 }
 
