@@ -16,6 +16,8 @@ let currentIdCValue = ""
 let currentSMTPValue = ""
 let currentKeyCValue = ""
 let currentValueCValue = ""
+let currentLectionsValue = ""
+let joinState = null
 let currentDestinationValue = ""
 let selectedLection = ""
 let generateState = "transform"
@@ -84,6 +86,8 @@ document.addEventListener("keydown", async (e) => {
     "S",
     "p",
     "P",
+    "j",
+    "J",
     "-",
     "Enter",
   ].includes(e.key)
@@ -116,25 +120,35 @@ document.addEventListener("keydown", async (e) => {
       showStatusMenu()
     } else if (e.key === "p" || e.key === "P") {
       showSMTPMenu()
+    } else if (e.key === "j" || e.key === "J") {
+      showJoinMenu()
     }
   }
 
   // BACK TO MAIN
   if (e.key === "-") {
-    hideSMTPMenu()
-    hideAddMenu()
-    hideTrainMenu()
-    hideViewMenu()
-    hideGenerateMenu()
-    hideMoveMenu()
-    hideLectionsMenu()
-    hideCorrectMenu()
-    showMainMenu()
-    hideGitMenu()
-    hideStatusMenu()
-    sel.innerText = ""
-  }
+    const isInInputState = (
+      (menu === "jm" && joinState === "lections") ||
+      (menu === "pm" && smtpState === "textField") ||
+      (menu === "nm" && gitState === "textField")
+    )
 
+    if (!isInInputState) {
+      hideSMTPMenu()
+      hideJoinMenu()
+      hideAddMenu()
+      hideTrainMenu()
+      hideViewMenu()
+      hideGenerateMenu()
+      hideMoveMenu()
+      hideLectionsMenu()
+      hideCorrectMenu()
+      showMainMenu()
+      hideGitMenu()
+      hideStatusMenu()
+      sel.innerText = ""
+    }
+  }
   // ADD MENU
   if (menu === "am") handleAddMenu(e)
 
@@ -161,6 +175,9 @@ document.addEventListener("keydown", async (e) => {
 
   // SMTP SETUP MENU
   if (menu === "pm") handleSMTPMenu(e)
+
+  // JOIN MENU
+  if (menu === "jm") handleJoinMenu(e)
 })
 
 // ——— Menu show/hide helpers ———
@@ -173,6 +190,22 @@ function showStatusMenu() {
 
 function hideStatusMenu() {
   document.getElementById("sm").style.display = "none"
+}
+
+function showJoinMenu() {
+  hideMainMenu()
+  document.getElementById("jm").style.display = "block"
+  menu = "jm"
+  joinState = "lections"
+  currentLectionsValue = ""
+
+  document.getElementById("joinstatus").innerText = "Enter lection specifications (comma-separated)"
+  document.getElementById("joinstatus").style.color = "blue"
+  document.getElementById("lectionsj").innerText = ""
+}
+
+function hideJoinMenu() {
+  document.getElementById("jm").style.display = "none"
 }
 
 function showGitMenu() {
@@ -295,6 +328,7 @@ function showTrainMenu() {
   hideGenerateMenu()
   document.getElementById("tm").style.display = "block"
   menu = "tm"
+  currentSessionScore = 0
   trainInit()
 }
 
@@ -351,6 +385,246 @@ async function showViewMenu() {
   const ilectionSelect = document.getElementById("ilectionSelect")
   ilectionSelect.innerText = ""
   ilectionSelect.style.color = "blue"
+}
+// ——— Join menu logic ———
+
+
+async function handleJoinMenu(e) {
+  if (joinState == "lections") {
+    if (e.key === "Backspace") {
+      currentLectionsValue = currentLectionsValue.slice(0, -1);
+    } else if (e.key === "Enter") {
+      joinState = null; // prevent any new input
+
+      try {
+        document.getElementById("joinstatus").innerText = "Processing lections...";
+        document.getElementById("joinstatus").style.color = "blue";
+
+        // parse lections and join
+        const joinedVocabulary = [];
+        const processedIds = new Set();
+
+        const lectionSpecs = currentLectionsValue.split(",").map(spec => spec.trim()).filter(spec => spec.length > 0);
+
+        for (const spec of lectionSpecs) {
+          try {
+            // parse single lection spec
+            let lectionName, rangeSpec;
+
+            // Check if has brackets
+            const bracketMatch = spec.match(/^(.+?)\[(.+)\]$/);
+            if (bracketMatch) {
+              lectionName = bracketMatch[1].trim();
+              rangeSpec = bracketMatch[2].trim();
+            } else {
+              lectionName = spec.trim();
+              rangeSpec = null;
+            }
+
+            // get lection vocabulary 
+            const allVocabulary = await new Promise((resolve, reject) => {
+              const tx = db.transaction(['vocabulary'], 'readonly');
+              const store = tx.objectStore('vocabulary');
+              const request = store.getAll();
+
+              request.onsuccess = () => {
+                const filtered = (request.result || []).filter(item => item.lection === lectionName);
+                resolve(filtered);
+              };
+
+              request.onerror = () => {
+                reject(new Error(`Failed to retrieve lection "${lectionName}"`));
+              };
+            });
+
+            if (allVocabulary.length === 0) {
+              throw new Error(`Lection "${lectionName}" not found or empty`);
+            }
+
+            // Sort by id
+            allVocabulary.sort((a, b) => (a.id || 0) - (b.id || 0));
+
+            let vocabularyItems = allVocabulary;
+
+            // filter by range (if specified)
+            if (rangeSpec) {
+              if (rangeSpec.includes('-')) {
+                // Range format: "1-14", "4-", "-4"
+                const parts = rangeSpec.split('-');
+                const startStr = parts[0].trim();
+                const endStr = parts[1].trim();
+
+                if (startStr === '' && endStr !== '') {
+                  // Format: [-4] - from beginning to id 4
+                  const endId = parseInt(endStr);
+                  if (isNaN(endId)) {
+                    throw new Error(`Invalid end range "${endStr}"`);
+                  }
+                  vocabularyItems = allVocabulary.filter(item => (item.id || 0) <= endId);
+
+                } else if (startStr !== '' && endStr === '') {
+                  // Format: [4-] - from id 4 to end
+                  const startId = parseInt(startStr);
+                  if (isNaN(startId)) {
+                    throw new Error(`Invalid start range "${startStr}"`);
+                  }
+                  vocabularyItems = allVocabulary.filter(item => (item.id || 0) >= startId);
+
+                } else if (startStr !== '' && endStr !== '') {
+                  // Format: [1-14] - from id 1 to id 14
+                  const startId = parseInt(startStr);
+                  const endId = parseInt(endStr);
+                  if (isNaN(startId) || isNaN(endId)) {
+                    throw new Error(`Invalid range "${rangeSpec}"`);
+                  }
+                  if (startId > endId) {
+                    throw new Error(`Start id ${startId} cannot be greater than end id ${endId}`);
+                  }
+                  vocabularyItems = allVocabulary.filter(item => {
+                    const itemId = item.id || 0;
+                    return itemId >= startId && itemId <= endId;
+                  });
+
+                } else {
+                  throw new Error(`Invalid range format "${rangeSpec}"`);
+                }
+
+              } else {
+                // Single id format: [4]
+                const targetId = parseInt(rangeSpec);
+                if (isNaN(targetId)) {
+                  throw new Error(`Invalid id "${rangeSpec}"`);
+                }
+                vocabularyItems = allVocabulary.filter(item => (item.id || 0) === targetId);
+              }
+            }
+
+            // Add items to joined vocabulary, avoiding duplicates
+            for (const item of vocabularyItems) {
+              const uniqueKey = `${item.vocabWord}-${item.value}`;
+              if (!processedIds.has(uniqueKey)) {
+                processedIds.add(uniqueKey);
+                joinedVocabulary.push(item);
+              }
+            }
+
+          } catch (error) {
+            console.error(`Error processing lection spec "${spec}":`, error);
+            throw new Error(`Failed to process "${spec}": ${error.message}`);
+          }
+        }
+
+        if (joinedVocabulary.length > 0) {
+          // generate unique lection name
+          document.getElementById("joinstatus").innerText = "Generating unique lection name...";
+
+          let baseName = "lection";
+          let suffix = "j";
+          let attemptName = baseName + suffix;
+
+          // Keep adding 'j' until we find a unique name
+          let foundUniqueName = false;
+          while (!foundUniqueName) {
+            const exists = await new Promise((resolve, reject) => {
+              const tx = db.transaction(['vocabulary'], 'readonly');
+              const store = tx.objectStore('vocabulary');
+              const request = store.getAll();
+
+              request.onsuccess = () => {
+                // Check if any items exist with this lection name
+                const hasLection = (request.result || []).some(item => item.lection === attemptName);
+                resolve(hasLection);
+              };
+
+              request.onerror = () => {
+                console.error(`Error checking if lection "${attemptName}" exists:`, request.error);
+                reject(request.error);
+              };
+            });
+
+            if (!exists) {
+              foundUniqueName = true;
+            } else {
+              suffix += "j";
+              attemptName = baseName + suffix;
+            }
+          }
+
+          console.log(`Generated unique lection name: ${attemptName}`);
+          const newLectionName = attemptName;
+
+          // save joined lection
+          // Get the next available ID for the new lection
+          const nextId = await new Promise((resolve, reject) => {
+            const tx = db.transaction(['vocabulary'], 'readonly');
+            const store = tx.objectStore('vocabulary');
+            const request = store.getAll();
+
+            request.onsuccess = () => {
+              const allItems = request.result;
+              let maxId = 0;
+              for (const item of allItems) {
+                if (item.id && item.id > maxId) {
+                  maxId = item.id;
+                }
+              }
+              resolve(maxId + 1);
+            };
+
+            request.onerror = () => {
+              reject(new Error('Failed to get next vocabulary ID'));
+            };
+          });
+
+          // Save each vocabulary item with the new lection name
+          await new Promise((resolve, reject) => {
+            const tx = db.transaction(['vocabulary'], 'readwrite');
+            const store = tx.objectStore('vocabulary');
+
+            tx.onerror = (event) => {
+              reject(new Error(`Transaction error: ${event.target.error}`));
+            };
+
+            for (let i = 0; i < joinedVocabulary.length; i++) {
+              const item = { ...joinedVocabulary[i] };
+              item.id = nextId + i;
+              item.lection = newLectionName;
+              // Reset stats for the new lection
+              item.right = 0;
+              item.wrong = 0;
+              item.weight = 1;
+
+              store.add(item);
+            }
+
+            tx.oncomplete = () => {
+              console.log(`Successfully saved ${joinedVocabulary.length} items to lection "${newLectionName}"`);
+              resolve();
+            };
+          });
+
+          document.getElementById("joinstatus").innerText = `Successfully created lection "${newLectionName}" with ${joinedVocabulary.length} items!`;
+          document.getElementById("joinstatus").style.color = "green";
+        } else {
+          document.getElementById("joinstatus").innerText = "No vocabulary items found to join";
+          document.getElementById("joinstatus").style.color = "red";
+        }
+
+        // Reset
+        currentLectionsValue = "";
+        joinState = "lections";
+
+      } catch (error) {
+        document.getElementById("joinstatus").innerText = "Error: " + error.message;
+        document.getElementById("joinstatus").style.color = "red";
+        joinState = "lections";
+      }
+
+    } else if (e.key.length === 1) {
+      currentLectionsValue += e.key;
+    }
+  }
+  document.getElementById("lectionsj").innerText = currentLectionsValue;
 }
 
 // ——— SMTP menu logic ———
@@ -1414,6 +1688,7 @@ async function handleMoveMenu(e) {
 // ——— Train menu logic ———
 
 async function trainInit() {
+  currentSessionScore = 0
   trainstate = "lection"
   currentLectionValue = ""
   selectedLection = ""
@@ -1683,6 +1958,8 @@ document.getElementById("printfooter").innerText = mkbanner("Generated by TinyVo
 document.getElementById("generateheader").innerText = mkbanner("Generate List", 45, "-")
 document.getElementById("lectionviewheader").innerText = mkbanner("Lection View", 45, "-")
 document.getElementById("moveheader").innerText = mkbanner("Move List", 45, "-")
+document.getElementById("joinheader").innerText = mkbanner("Join Lections", 45, "-")
+document.getElementById("broadcastheader").innerText = mkbanner("Broadcast", 45, "-")
 document.getElementById("statsfooter").innerText = mkbanner("", 45, "=")
 document.getElementById("movefooter").innerText = mkbanner("", 45, "-")
 document.getElementById("smtpfooter").innerText = mkbanner("", 45, "-")
@@ -1694,13 +1971,15 @@ document.getElementById("viewfooter").innerText = mkbanner("", 45, "-")
 document.getElementById("generatefooter").innerText = mkbanner("", 45, "-")
 document.getElementById("trainfooter").innerText = mkbanner("0/0", 45, "-")
 document.getElementById("lectionviewfooter").innerText = mkbanner("", 45, "-")
+document.getElementById("broadcastfooter").innerText = mkbanner("", 45, "-")
 document.getElementById("githeader").innerText = mkbanner("Git", 45, "-")
 document.getElementById("gitfooter").innerText = mkbanner("", 45, "-")
+document.getElementById("joinfooter").innerText = mkbanner("", 45, "-")
 
 // ——— IndexedDB & data helpers ———
 
 function initDB() {
-  const req = indexedDB.open("vocTrainerDB", 4)
+  const req = indexedDB.open("vocTrainerDB", 6)
   req.onupgradeneeded = (e) => {
     db = e.target.result
 
@@ -1713,7 +1992,7 @@ function initDB() {
       autoIncrement: true,
     })
 
-    vocabStore.createIndex("vocabWord", "vocabWord", { unique: true })
+    vocabStore.createIndex("vocabWord", "vocabWord", { unique: false })
 
     // Config table
     if (!db.objectStoreNames.contains("config")) {
