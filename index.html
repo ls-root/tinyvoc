@@ -6,6 +6,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>TinyVoc</title>
     <link rel="stylesheet" href="style.css">
+    <script src="lib/peer.js"></script>
 </head>
 
 <body>
@@ -13,7 +14,7 @@
         <p id="vocbanner"></p>
         <p><strong>A</strong>dd vocabulary</p>
         <p><strong>T</strong>rain vocabulary</p>
-        <p><strong>E</strong>xport vocabulary</p>
+        <p><strong>E</strong>xport vocabulary (deprecated)</p>
         <p id="iv"><strong>I</strong>mport vocabulary</p>
         <input style="display: none;" type="file" id="file" />
         <p><strong>V</strong>iew</p>
@@ -30,15 +31,18 @@
         <p>Your Selection: <strong id="selection"></strong></p>
     </div>
 
-    <div id="bm">
+    <div id="bm" style="display: none;">
         <p id="broadcastheader"></p>
         <p style="color: red;">WARNING: WebRTC relies on PeerCloud and PeerJS</p>
         <p><strong>F</strong>ile</p>
-        <p><strong>Q</strong>R-Code</p>
         <p><strong>W</strong>ebRTC (<strong>r</strong>ecive)</p>
         <p><strong>W</strong>ebRTC (<strong>s</strong>end)</p>
         <p>Press <strong>-</strong> to return to the main menu</p>
         <p id="broadcastfooter"></p>
+        <div id="broadcast" style="display: none;">
+            <p id="broadcastt">Lections:&nbsp;</p>&nbsp; <strong id="broadcasti"></strong>
+        </div>
+        <p id="peerid"></p>
     </div>
 
     <div id="jm" style="display: none;">

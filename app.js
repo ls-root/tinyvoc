@@ -19,6 +19,12 @@ let currentValueCValue = ""
 let currentLectionsValue = ""
 let joinState = null
 let currentDestinationValue = ""
+let currentBroadcastValue = ""
+let broadcastState = "main"
+let recvPeer = null
+let recvConn = null
+let sendPeer = null
+let sendConn = null
 let selectedLection = ""
 let generateState = "transform"
 let moveState = "source"
@@ -88,6 +94,8 @@ document.addEventListener("keydown", async (e) => {
     "P",
     "j",
     "J",
+    "b",
+    "B",
     "-",
     "Enter",
   ].includes(e.key)
@@ -122,6 +130,8 @@ document.addEventListener("keydown", async (e) => {
       showSMTPMenu()
     } else if (e.key === "j" || e.key === "J") {
       showJoinMenu()
+    } else if (e.key === "b" || e.key === "B") {
+      showBroadcastMenu()
     }
   }
 
@@ -130,7 +140,8 @@ document.addEventListener("keydown", async (e) => {
     const isInInputState = (
       (menu === "jm" && joinState === "lections") ||
       (menu === "pm" && smtpState === "textField") ||
-      (menu === "nm" && gitState === "textField")
+      (menu === "nm" && gitState === "textField") ||
+      (menu === "bm" && (broadcastState === "lections" || broadcastState === "peerid" || broadcastState === "send_lections"))
     )
 
     if (!isInInputState) {
@@ -142,6 +153,7 @@ document.addEventListener("keydown", async (e) => {
       hideGenerateMenu()
       hideMoveMenu()
       hideLectionsMenu()
+      hideBroadcastMenu()
       hideCorrectMenu()
       showMainMenu()
       hideGitMenu()
@@ -178,9 +190,22 @@ document.addEventListener("keydown", async (e) => {
 
   // JOIN MENU
   if (menu === "jm") handleJoinMenu(e)
+
+  // BROADCAST MENU
+  if (menu === "bm") handleBroadcastMenu(e)
 })
 
 // ——— Menu show/hide helpers ———
+
+function showBroadcastMenu() {
+  hideMainMenu()
+  document.getElementById("bm").style.display = "block"
+  menu = "bm"
+}
+
+function hideBroadcastMenu() {
+  document.getElementById("bm").style.display = "none"
+}
 
 function showStatusMenu() {
   hideMainMenu()
@@ -386,8 +411,282 @@ async function showViewMenu() {
   ilectionSelect.innerText = ""
   ilectionSelect.style.color = "blue"
 }
-// ——— Join menu logic ———
+// ——— Broadcast menu logic ———
+async function handleBroadcastMenu(e) {
+  if (broadcastState === "main") {
+    if (e.key === "f") {
+      document.getElementById("broadcast").style.display = "flex"
+      document.getElementById("broadcastt").innerText = "lections: "
+      broadcastState = "lections"
+      currentBroadcastValue = ""
+      document.getElementById("broadcasti").innerText = ""
+    } else if (e.key === "w") {
+      broadcastState = "webrtc"
+    }
+  } else if (broadcastState === "webrtc") {
+    if (e.key === "Escape") {
+      broadcastState = "main"
+    } else if (e.key === "r") {
+      recvPeer = new Peer()
 
+      recvPeer.on("open", id => {
+        document.getElementById("peerid").style.display = "block"
+        document.getElementById("peerid").innerHTML = "peer-id " + id
+      })
+
+      recvPeer.on("connection", conn => {
+        recvConn = conn
+        recvConn.on("open", () => {
+          document.getElementById("peerid").innerText += ". Connected"
+        })
+
+        recvConn.on("data", data => {
+          hideBroadcastMenu()
+          showMainMenu()
+          try {
+            let parsedData
+            if (typeof data === 'string') {
+              parsedData = JSON.parse(data)
+            } else {
+              parsedData = data
+            }
+
+            const vocabularyArray = parsedData.vocabulary || parsedData
+            importData(vocabularyArray)
+          } catch (error) {
+            console.error("Failed to import received data:", error)
+          }
+        })
+
+        recvPeer.on("error", err => {
+          console.error(err)
+          document.getElementById("peerid").innerText += ". Error check console for details"
+        })
+      })
+
+      broadcastState = "main"
+    } else if (e.key === "s") {
+      document.getElementById("peerid").style.display = "block"
+      document.getElementById("peerid").innerText = "Enter peer ID in URL hash"
+
+      const handleHashChange = async () => {
+        const hash = window.location.hash.substring(1)
+        if (hash) {
+          await writeGP("peerid", hash)
+          document.getElementById("peerid").innerText = `Peer ID saved: ${hash}.`
+
+          window.removeEventListener("hashchange", handleHashChange)
+
+          document.getElementById("broadcast").style.display = "flex"
+          document.getElementById("broadcastt").innerText = "lections: "
+          broadcastState = "send_lections"
+          currentBroadcastValue = ""
+          document.getElementById("broadcasti").innerText = ""
+        }
+      }
+
+      window.addEventListener("hashchange", handleHashChange)
+
+      const currentHash = window.location.hash.substring(1)
+      if (currentHash) {
+        handleHashChange()
+      }
+    }
+  } else if (broadcastState === "lections") {
+    if (e.key === "Backspace") {
+      currentBroadcastValue = currentBroadcastValue.slice(0, -1)
+    } else if (e.key === "Enter") {
+      if (currentBroadcastValue.trim()) {
+        // Validate lections input
+        const isValid = await validateLectionsInput(currentBroadcastValue)
+        if (isValid) {
+          document.getElementById("broadcasti").style.color = "white"
+          const data = await getLectionData(currentBroadcastValue)
+          download(data)
+          document.getElementById("broadcast").style.display = "none"
+          broadcastState = "main"
+          currentBroadcastValue = ""
+        } else {
+          document.getElementById("broadcasti").style.color = "red"
+        }
+      }
+    } else if (e.key === "Escape") {
+      document.getElementById("broadcast").style.display = "none"
+      broadcastState = "main"
+      currentBroadcastValue = ""
+    } else if (e.key.length === 1) {
+      currentBroadcastValue += e.key
+    }
+    document.getElementById("broadcasti").innerText = currentBroadcastValue
+  } else if (broadcastState === "send_lections") {
+    if (e.key === "Backspace") {
+      currentBroadcastValue = currentBroadcastValue.slice(0, -1)
+    } else if (e.key === "Enter") {
+      if (currentBroadcastValue.trim()) {
+        // Validate lections input
+        const isValid = await validateLectionsInput(currentBroadcastValue)
+        if (isValid) {
+          document.getElementById("broadcasti").style.color = "white"
+          const data = await getLectionData(currentBroadcastValue)
+          const peerid = await readGP("peerid")
+
+          sendPeer = new Peer()
+          sendPeer.on("open", () => {
+            sendConn = sendPeer.connect(peerid)
+            sendConn.on("open", () => {
+              try {
+                const parsedData = JSON.parse(data)
+                sendConn.send(parsedData)
+                document.getElementById("broadcast").style.display = "none"
+                document.getElementById("peerid").style.display = "none"
+                broadcastState = "main"
+                currentBroadcastValue = ""
+              } catch (error) {
+                console.error("Failed to send data:", error)
+                document.getElementById("broadcast").style.display = "none"
+                document.getElementById("peerid").style.display = "none"
+                broadcastState = "main"
+                currentBroadcastValue = ""
+              }
+            })
+
+            sendConn.on("error", (err) => {
+              console.error("Connection error:", err)
+              document.getElementById("broadcast").style.display = "none"
+              document.getElementById("peerid").style.display = "none"
+              broadcastState = "main"
+              currentBroadcastValue = ""
+            })
+          })
+
+          sendPeer.on("error", (err) => {
+            console.error("Peer error:", err)
+            document.getElementById("broadcast").style.display = "none"
+            document.getElementById("peerid").style.display = "none"
+            broadcastState = "main"
+            currentBroadcastValue = ""
+          })
+        } else {
+          document.getElementById("broadcasti").style.color = "red"
+        }
+      }
+    } else if (e.key === "Escape") {
+      document.getElementById("broadcast").style.display = "none"
+      document.getElementById("peerid").style.display = "none"
+      broadcastState = "main"
+      currentBroadcastValue = ""
+    } else if (e.key.length === 1) {
+      currentBroadcastValue += e.key
+    }
+    document.getElementById("broadcasti").innerText = currentBroadcastValue
+  }
+}
+
+async function validateLectionsInput(inputValue) {
+  const trimmedInput = inputValue.trim().toLowerCase()
+
+  if (trimmedInput === "all") {
+    return true
+  }
+
+  const lectionNames = inputValue.split(",").map(name => name.trim()).filter(name => name.length > 0)
+
+  const existingLections = await readAllLections()
+
+  for (const lectionName of lectionNames) {
+    if (!existingLections.includes(lectionName)) {
+      return false
+    }
+  }
+
+  return true
+}
+
+async function getLectionData(lectionString) {
+  return new Promise(async (resolve, reject) => {
+    try {
+      const isAll = lectionString.toLowerCase().trim() === "all"
+      const lectionNames = isAll ? [] : lectionString.split(',').map(name => name.trim())
+
+      const tx = db.transaction(['vocabulary'], 'readonly')
+      const store = tx.objectStore('vocabulary')
+      const request = store.getAll()
+
+      request.onsuccess = () => {
+        let filteredData = request.result || []
+
+        if (!isAll) {
+          filteredData = filteredData.filter(item =>
+            lectionNames.includes(item.lection)
+          )
+        }
+
+        // Format the data for importData function
+        // Assuming importData expects JSON format with vocabulary structure
+        const formattedData = {
+          vocabulary: filteredData.map(item => ({
+            vocabWord: item.vocabWord,
+            value: item.value,
+            lection: item.lection,
+            wrong: item.wrong || 0,
+            right: item.right || 0,
+            id: item.id
+          }))
+        }
+
+        resolve(JSON.stringify(formattedData))
+      }
+
+      request.onerror = () => {
+        reject(new Error(`Failed to retrieve lection data: ${request.error}`))
+      }
+
+    } catch (error) {
+      reject(new Error(`Error processing lection string "${lectionString}": ${error.message}`))
+    }
+  })
+}
+
+function broadcastTextField(oldState = "main") {
+  return new Promise((resolve, reject) => {
+    currentBroadcastValue = ""
+    document.getElementById("broadcasti").innerText = ""
+
+    function cleanupTextField() {
+      document.getElementById("broadcasti").innerText = ""
+      currentBroadcastValue = ""
+    }
+
+    function textFieldHandler(e) {
+      if (e.key === "Enter") {
+        const valueToReturn = currentBroadcastValue
+        cleanupTextField()
+        document.removeEventListener("keydown", textFieldHandler)
+        broadcastState = oldState
+        resolve(valueToReturn)
+        e.preventDefault()
+      } else if (e.key === "Escape" || e.key === "-" || e.key === "/") {
+        cleanupTextField()
+        document.removeEventListener("keydown", textFieldHandler)
+        broadcastState = oldState
+        resolve(null)
+        e.preventDefault()
+      } else if (e.key === "Backspace") {
+        currentBroadcastValue = currentBroadcastValue.slice(0, -1)
+        document.getElementById("broadcasti").innerText = currentBroadcastValue
+        e.preventDefault()
+      } else if (e.key.length === 1) {
+        currentBroadcastValue += e.key
+        document.getElementById("broadcasti").innerText = currentBroadcastValue
+        e.preventDefault()
+      }
+    }
+
+    document.addEventListener("keydown", textFieldHandler)
+  })
+}
+
+// ——— Join menu logic ———
 
 async function handleJoinMenu(e) {
   if (joinState == "lections") {
