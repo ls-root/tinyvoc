@@ -25,6 +25,8 @@ let recvPeer = null
 let recvConn = null
 let sendPeer = null
 let sendConn = null
+let docState = "toc"
+let docNum = ""
 let selectedLection = ""
 let generateState = "transform"
 let moveState = "source"
@@ -132,6 +134,8 @@ document.addEventListener("keydown", async (e) => {
       showJoinMenu()
     } else if (e.key === "b" || e.key === "B") {
       showBroadcastMenu()
+    } else if (e.key === "d" || e.key === "D") {
+      showDocsMenu()
     }
   }
 
@@ -149,6 +153,7 @@ document.addEventListener("keydown", async (e) => {
       hideJoinMenu()
       hideAddMenu()
       hideTrainMenu()
+      hideDocsMenu()
       hideViewMenu()
       hideGenerateMenu()
       hideMoveMenu()
@@ -193,9 +198,32 @@ document.addEventListener("keydown", async (e) => {
 
   // BROADCAST MENU
   if (menu === "bm") handleBroadcastMenu(e)
+
+  // DOCS MENU
+  if (menu === "dm") handleDocsMenu(e)
 })
 
 // ——— Menu show/hide helpers ———
+
+function showDocsMenu() {
+  hideMainMenu()
+  document.getElementById("dm").style.display = "block"
+  hideAllDocElements()
+  writeGP("currentDocPage", 0)
+  document.getElementById("doctoc").style.display = "block"
+  menu = "dm"
+  for (let i = 1; i <= 22; i++) {
+    const pageId = "docpage" + String(i).padStart(2, '0')
+    const pageElement = document.getElementById(pageId)
+    if (pageElement) {
+      pageElement.style.display = "none"
+    }
+  }
+}
+
+function hideDocsMenu() {
+  document.getElementById("dm").style.display = "none"
+}
 
 function showBroadcastMenu() {
   hideMainMenu()
@@ -410,6 +438,70 @@ async function showViewMenu() {
   const ilectionSelect = document.getElementById("ilectionSelect")
   ilectionSelect.innerText = ""
   ilectionSelect.style.color = "blue"
+}
+// ——— Docs menu logic ———
+async function handleDocsMenu(e) {
+  console.log(typeof e.key)
+
+  if (e.key === "t" || e.key === "T") {
+    docState = "toc"
+    hideAllDocElements()
+    document.getElementById("doctoc").style.display = "block"
+  } if (/^\d$/.test(e.key) && docState === "toc" && docNum.length === 0) {
+    docState = "num"
+    docNum += e.key
+  } else if (/^\d$/.test(e.key) && docState === "num" && docNum.length === 1) {
+    docState = "page"
+    docNum += e.key
+
+    const pageNum = parseInt(docNum)
+    if (pageNum >= 1 && pageNum <= 22) {
+      showDocPage(pageNum)
+    } else {
+      docState = "toc"
+      docNum = ""
+    }
+
+    docNum = ""
+  } else if (e.key === "ArrowLeft") {
+    const currentPage = await readGP("currentDocPage") || 1
+    if (currentPage > 1) {
+      const newPage = currentPage - 1
+      showDocPage(newPage)
+      await writeGP("currentDocPage", newPage)
+    }
+  } else if (e.key === "ArrowRight") {
+    const currentPage = await readGP("currentDocPage") || 1
+    if (currentPage < 22) {
+      const newPage = currentPage + 1
+      showDocPage(newPage)
+      await writeGP("currentDocPage", newPage)
+    }
+  }
+}
+
+function hideAllDocElements() {
+  document.getElementById("doctoc").style.display = "none"
+  for (let i = 1; i <= 22; i++) {
+    const pageId = "docpage" + String(i).padStart(2, '0')
+    const pageElement = document.getElementById(pageId)
+    if (pageElement) {
+      pageElement.style.display = "none"
+    }
+  }
+}
+
+function showDocPage(pageNum) {
+  docState = "page"
+  hideAllDocElements()
+  const pageId = "docpage" + String(pageNum).padStart(2, '0')
+  const pageElement = document.getElementById(pageId)
+  if (pageElement) {
+    pageElement.style.display = "block"
+    writeGP("currentDocPage", pageNum)
+  } else {
+    console.error(`Doc page element not found: ${pageId}`)
+  }
 }
 // ——— Broadcast menu logic ———
 async function handleBroadcastMenu(e) {
@@ -2259,6 +2351,7 @@ document.getElementById("lectionviewheader").innerText = mkbanner("Lection View"
 document.getElementById("moveheader").innerText = mkbanner("Move List", 45, "-")
 document.getElementById("joinheader").innerText = mkbanner("Join Lections", 45, "-")
 document.getElementById("broadcastheader").innerText = mkbanner("Broadcast", 45, "-")
+document.getElementById("docsheader").innerText = mkbanner("TinyVoc Docs", 45, "-")
 document.getElementById("statsfooter").innerText = mkbanner("", 45, "=")
 document.getElementById("movefooter").innerText = mkbanner("", 45, "-")
 document.getElementById("smtpfooter").innerText = mkbanner("", 45, "-")
@@ -2268,6 +2361,7 @@ document.getElementById("statusfooter").innerText = mkbanner("", 45, "-")
 document.getElementById("addfooter").innerText = mkbanner("", 45, "-")
 document.getElementById("viewfooter").innerText = mkbanner("", 45, "-")
 document.getElementById("generatefooter").innerText = mkbanner("", 45, "-")
+document.getElementById("docsfooter").innerText = mkbanner("", 45, "-")
 document.getElementById("trainfooter").innerText = mkbanner("0/0", 45, "-")
 document.getElementById("lectionviewfooter").innerText = mkbanner("", 45, "-")
 document.getElementById("broadcastfooter").innerText = mkbanner("", 45, "-")

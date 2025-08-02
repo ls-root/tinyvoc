@@ -8,8 +8,15 @@ strong {
     color: rgb(0, 0, 255);
 }
 
-h1, p {
+h1,
+p {
     margin: 0;
+    font-family: monospace;
+}
+
+p.h1 {
+    font-weight: bold;
+    font-size: 20px;
 }
 
 #file {
