@@ -13,7 +13,6 @@ let currentSourceValue = ""
 let correctState = "lection"
 let currentLectionCValue = ""
 let currentIdCValue = ""
-let currentSMTPValue = ""
 let currentKeyCValue = ""
 let currentValueCValue = ""
 let currentLectionsValue = ""
@@ -31,7 +30,6 @@ let selectedLection = ""
 let generateState = "transform"
 let moveState = "source"
 let gitState = "select"
-let smtpState = "host"
 let currentGitValue = ""
 let dataToTrain = []
 let shuffledKeys = []
@@ -128,8 +126,6 @@ document.addEventListener("keydown", async (e) => {
       showGitMenu()
     } else if (e.key === "s" || e.key === "S") {
       showStatusMenu()
-    } else if (e.key === "p" || e.key === "P") {
-      showSMTPMenu()
     } else if (e.key === "j" || e.key === "J") {
       showJoinMenu()
     } else if (e.key === "b" || e.key === "B") {
@@ -143,13 +139,11 @@ document.addEventListener("keydown", async (e) => {
   if (e.key === "-") {
     const isInInputState = (
       (menu === "jm" && joinState === "lections") ||
-      (menu === "pm" && smtpState === "textField") ||
       (menu === "nm" && gitState === "textField") ||
       (menu === "bm" && (broadcastState === "lections" || broadcastState === "peerid" || broadcastState === "send_lections"))
     )
 
     if (!isInInputState) {
-      hideSMTPMenu()
       hideJoinMenu()
       hideAddMenu()
       hideTrainMenu()
@@ -189,9 +183,6 @@ document.addEventListener("keydown", async (e) => {
 
   // GIT MENU
   if (menu === "nm") handleGitMenu(e)
-
-  // SMTP SETUP MENU
-  if (menu === "pm") handleSMTPMenu(e)
 
   // JOIN MENU
   if (menu === "jm") handleJoinMenu(e)
@@ -268,15 +259,6 @@ function showGitMenu() {
   menu = "nm"
 }
 
-function showSMTPMenu() {
-  hideMainMenu()
-  document.getElementById("pm").style.display = "block"
-  menu = "pm"
-}
-
-function hideSMTPMenu() {
-  document.getElementById("pm").style.display = "none"
-}
 function hideGitMenu() {
   document.getElementById("nm").style.display = "none"
 }
@@ -1018,181 +1000,6 @@ async function handleJoinMenu(e) {
   document.getElementById("lectionsj").innerText = currentLectionsValue;
 }
 
-// ——— SMTP menu logic ———
-async function handleSMTPMenu(e) {
-  if (smtpState === "host") {
-    try {
-      const useCredentialEncryption = await SMTPTextField("Use AES-256 Encryption for Credentials (y/n)")
-      if (useCredentialEncryption === null) return
-
-      const encryptChoice = useCredentialEncryption.toLowerCase().trim()
-      if (!['y', 'n', 'yes', 'no'].includes(encryptChoice)) {
-        document.getElementById("smtpstatus").innerText = "Invalid choice. Please enter y/n"
-        document.getElementById("smtpstatus").style.color = "red"
-        return
-      }
-
-      let credentialEncryptionPassword = null
-
-      if (['y', 'yes'].includes(encryptChoice)) {
-        credentialEncryptionPassword = await SMTPTextField("Password to Encrypt Credentials")
-        if (credentialEncryptionPassword === null) return
-
-        if (!credentialEncryptionPassword.trim()) {
-          document.getElementById("smtpstatus").innerText = "Encryption password cannot be empty"
-          document.getElementById("smtpstatus").style.color = "red"
-          return
-        }
-        if (credentialEncryptionPassword.length < 8) {
-          document.getElementById("smtpstatus").innerText = "Encryption password must be at least 8 characters"
-          document.getElementById("smtpstatus").style.color = "red"
-          return
-        }
-      }
-
-      const host = await SMTPTextField("SMTP Host (e.g., smtp.gmail.com)")
-      if (host === null) return
-
-      if (!host.trim()) {
-        document.getElementById("smtpstatus").innerText = "SMTP Host cannot be empty"
-        document.getElementById("smtpstatus").style.color = "red"
-        return
-      }
-
-      const hostRegex = /^[a-zA-Z0-9]([a-zA-Z0-9\-]{0,61}[a-zA-Z0-9])?(\.[a-zA-Z0-9]([a-zA-Z0-9\-]{0,61}[a-zA-Z0-9])?)*$/
-      if (!hostRegex.test(host.trim())) {
-        document.getElementById("smtpstatus").innerText = "Invalid SMTP Host format"
-        document.getElementById("smtpstatus").style.color = "red"
-        return
-      }
-
-      const portStr = await SMTPTextField("SMTP Port (e.g., 587, 465, 25)")
-      if (portStr === null) return
-
-      const port = parseInt(portStr.trim())
-      if (isNaN(port) || port < 1 || port > 65535) {
-        document.getElementById("smtpstatus").innerText = "Port must be a number between 1 and 65535"
-        document.getElementById("smtpstatus").style.color = "red"
-        return
-      }
-
-      const username = await SMTPTextField("Username/Email")
-      if (username === null) return
-
-      if (!username.trim()) {
-        document.getElementById("smtpstatus").innerText = "Username cannot be empty"
-        document.getElementById("smtpstatus").style.color = "red"
-        return
-      }
-
-      const password = await SMTPTextField("Password")
-      if (password === null) return
-
-      if (!password.trim()) {
-        document.getElementById("smtpstatus").innerText = "Password cannot be empty"
-        document.getElementById("smtpstatus").style.color = "red"
-        return
-      }
-
-      const encryption = await SMTPTextField("Encryption (tls/ssl/none)")
-      if (encryption === null) return
-
-      const encryptionLower = encryption.toLowerCase().trim()
-      if (!['tls', 'ssl', 'none'].includes(encryptionLower)) {
-        document.getElementById("smtpstatus").innerText = "Encryption must be: tls, ssl, or none"
-        document.getElementById("smtpstatus").style.color = "red"
-        return
-      }
-
-      const from = await SMTPTextField("From Email Address")
-      if (from === null) return
-
-      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
-      if (!emailRegex.test(from.trim())) {
-        document.getElementById("smtpstatus").innerText = "Invalid 'From' email address format"
-        document.getElementById("smtpstatus").style.color = "red"
-        return
-      }
-
-      const to = await SMTPTextField("To Email Address")
-      if (to === null) return
-
-      if (!emailRegex.test(to.trim())) {
-        document.getElementById("smtpstatus").innerText = "Invalid 'To' email address format"
-        document.getElementById("smtpstatus").style.color = "red"
-        return
-      }
-
-      const smtpConfig = {
-        host: host.trim(),
-        port: port,
-        username: username.trim(),
-        password: password,
-        encryption: encryptionLower,
-        from: from.trim(),
-        to: to.trim(),
-        useEncryption: ['y', 'yes'].includes(encryptChoice),
-        encryptionPassword: credentialEncryptionPassword
-      }
-
-
-    } catch (error) {
-      document.getElementById("smtpstatus").innerText = "Configuration failed: " + error.message
-      document.getElementById("smtpstatus").style.color = "red"
-      smtpState = "host" // Reset state on error
-    }
-  }
-}
-function SMTPTextField(prefix) {
-  return new Promise((resolve) => {
-    const paramm = document.getElementById("smtpparamf")
-    const paramText = document.getElementById("smtpparam")
-    const paramValue = document.getElementById("smtpparamv")
-
-    const originalSMTPState = smtpState
-    smtpState = "textField"
-
-    paramm.style.display = "flex"
-    paramText.innerHTML = prefix // allowing HTML injection
-    paramValue.innerText = ""
-    currentSMTPValue = ""
-
-    const textFieldHandler = (e) => {
-      if (menu !== "pm" || smtpState !== "textField") return
-
-      if (e.key === "Backspace") {
-        currentSMTPValue = currentSMTPValue.slice(0, -1)
-        paramValue.innerText = currentSMTPValue
-        e.preventDefault()
-      } else if (e.key === "Enter") {
-        const value = currentSMTPValue
-        cleanupTextField()
-        document.removeEventListener("keydown", textFieldHandler)
-        resolve(value)
-        e.preventDefault()
-      } else if (e.key === "Escape" || e.key === "-") {
-        cleanupTextField()
-        document.removeEventListener("keydown", textFieldHandler)
-        resolve(null)
-        e.preventDefault()
-      } else if (e.key.length === 1) {
-        currentSMTPValue += e.key
-        paramValue.innerText = currentSMTPValue
-        e.preventDefault()
-      }
-    }
-
-    const cleanupTextField = () => {
-      smtpState = originalSMTPState
-      paramm.style.display = "none"
-      paramText.innerText = ""
-      paramValue.innerText = ""
-      currentSMTPValue = ""
-    }
-
-    document.addEventListener("keydown", textFieldHandler)
-  })
-}
 // ——— Git menu logic ———  
 async function handleGitMenu(e) {
   const clearUI = () => {
@@ -2338,7 +2145,6 @@ function mkbanner(text, width, sep) {
 }
 
 document.getElementById("statusheader").innerText = mkbanner("Git Status", 45, "-")
-document.getElementById("smtpheader").innerText = mkbanner("SMTP Setup", 45, "-")
 document.getElementById("correctbanner").innerText = mkbanner("Correct vocabulary", 45, "-")
 document.getElementById("statsbanner").innerText = mkbanner("Training Statistics", 45, "=")
 document.getElementById("vocbanner").innerText = mkbanner("TinyVoc", 45, "-")
@@ -2354,7 +2160,6 @@ document.getElementById("broadcastheader").innerText = mkbanner("Broadcast", 45,
 document.getElementById("docsheader").innerText = mkbanner("TinyVoc Docs", 45, "-")
 document.getElementById("statsfooter").innerText = mkbanner("", 45, "=")
 document.getElementById("movefooter").innerText = mkbanner("", 45, "-")
-document.getElementById("smtpfooter").innerText = mkbanner("", 45, "-")
 document.getElementById("correctfooter").innerText = mkbanner("", 45, "-")
 document.getElementById("vocfooter").innerText = mkbanner("", 45, "-")
 document.getElementById("statusfooter").innerText = mkbanner("", 45, "-")
