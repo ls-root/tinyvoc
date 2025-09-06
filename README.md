@@ -2,14 +2,6 @@
 
 A simple vocabulary trainer web application that helps you learn and practice vocabulary using your browser's IndexedDB for storage.
 
-## Features
-
-- **Add Vocabulary**: Store key-value pairs (e.g., words and their translations)
-- **Train Vocabulary**: Practice by recalling values for randomly selected keys
-- **Persistent Storage**: Uses IndexedDB to save your vocabulary between sessions
-- **Keyboard-Only Interface**: Fully controllable with just your keyboard
-
-
 ## How to Build
 
 To build the project (if you're making modifications):
