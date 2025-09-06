@@ -33,10 +33,12 @@ let gitState = "select"
 let currentGitValue = ""
 let dataToTrain = []
 let shuffledKeys = []
+let sessionAttempts = new Map();
 let uniqueKeyChar = " "
 let trainstate = "lection"
 let wrongAttempts = new Map()
 let currentKey = ""
+let docPages = 24
 let db
 let currentSessionScore = 0
 let AvabialeModes = Array.from({ length: 5 }, (e, i) => i)
@@ -59,12 +61,25 @@ let GenerateModesParams = {
   3: 2,
   4: 1,
 }
+const menuDisplayEl = document.getElementById("barp1")
+const clockDisplayEl = document.getElementById("barp2")
+
+function updateClockDisplay() {
+  const now = new Date()
+  const hours = String(now.getHours()).padStart(2, "0")
+  const minutes = String(now.getMinutes()).padStart(2, "0")
+  clockDisplayEl.innerText = `${hours}:${minutes}`
+}
+
+updateClockDisplay() // Initaliy set clock
+setInterval(updateClockDisplay, 1000)
 
 document.addEventListener("keydown", async (e) => {
   // Prevent firefox from starting Quick Search with /
   if (e.key === "/") {
     e.preventDefault()
   }
+
   const sel = document.getElementById("selection")
   sel.innerText = e.key
   sel.style.color = [
@@ -96,45 +111,48 @@ document.addEventListener("keydown", async (e) => {
     "J",
     "b",
     "B",
+    "f",
+    "F",
     "-",
     "Enter",
   ].includes(e.key)
-    ? "blue"
+    ? "#5294e2"
     : "red"
 
   // MAIN MENU
   if (menu === "mm") {
     if (e.key === "a" || e.key === "A") {
-      showAddMenu()
+      showAddMenu(); return
     } else if (e.key === "t" || e.key === "T") {
-      showTrainMenu()
+      showTrainMenu(); return
     } else if (e.key === "e" || e.key === "E") {
-      download(JSON.stringify(await readAllData()))
+      download(JSON.stringify(await readAllData())); return
     } else if (e.key === "i" || e.key === "I") {
-      getFile()
+      getFile(); return
     } else if (e.key === "v" || e.key === "V") {
-      showViewMenu()
+      showViewMenu(); return
     } else if (e.key === "g" || e.key === "G") {
-      showGenerateMenu()
+      showGenerateMenu(); return
     } else if (e.key === "m" || e.key === "M") {
-      showMoveMenu()
+      showMoveMenu(); return
     } else if (e.key === "l" || e.key === "L") {
-      showLectionsMenu()
+      showLectionsMenu(); return
     } else if (e.key === "c" || e.key === "C") {
-      showCorrectMenu()
+      showCorrectMenu(); return
     } else if (e.key === "n" || e.key === "N") {
-      showGitMenu()
+      showGitMenu(); return
     } else if (e.key === "s" || e.key === "S") {
-      showStatusMenu()
+      showStatusMenu(); return
     } else if (e.key === "j" || e.key === "J") {
-      showJoinMenu()
+      showJoinMenu(); return
     } else if (e.key === "b" || e.key === "B") {
-      showBroadcastMenu()
+      showBroadcastMenu(); return
     } else if (e.key === "d" || e.key === "D") {
-      showDocsMenu()
+      showDocsMenu(); return
+    } else if (e.key === "f" || e.key === "F") {
+      showFigureMenu(); return
     }
   }
-
   // BACK TO MAIN
   if (e.key === "-") {
     const isInInputState = (
@@ -155,6 +173,7 @@ document.addEventListener("keydown", async (e) => {
       hideBroadcastMenu()
       hideCorrectMenu()
       showMainMenu()
+      hideFigureMenu()
       hideGitMenu()
       hideStatusMenu()
       sel.innerText = ""
@@ -194,7 +213,27 @@ document.addEventListener("keydown", async (e) => {
   if (menu === "dm") handleDocsMenu(e)
 })
 
+function setMenu(long, docpage) {
+  document.getElementById("barp1").innerText = long
+  if (docpage) {
+    document.getElementById("barp15").innerHTML = "<strong id='bardoc'></strong>"
+    document.getElementById("bardoc").innerText = docpage
+  } else {
+    document.getElementById("barp15").innerHTML = "<strong id='bardoc'>Error</strong> No Docs"
+  }
+}
 // ——— Menu show/hide helpers ———
+function showFigureMenu() {
+  hideMainMenu()
+  document.getElementById("fm").style.display = "block"
+  handleFigureMenu()
+  menu = "fm"
+  setMenu("Figure Menu", "11")
+}
+
+function hideFigureMenu() {
+  document.getElementById("fm").style.display = "none"
+}
 
 function showDocsMenu() {
   hideMainMenu()
@@ -203,7 +242,8 @@ function showDocsMenu() {
   writeGP("currentDocPage", 0)
   document.getElementById("doctoc").style.display = "block"
   menu = "dm"
-  for (let i = 1; i <= 22; i++) {
+  setMenu("Docs Menu")
+  for (let i = 1; i <= docPages; i++) {
     const pageId = "docpage" + String(i).padStart(2, '0')
     const pageElement = document.getElementById(pageId)
     if (pageElement) {
@@ -220,6 +260,7 @@ function showBroadcastMenu() {
   hideMainMenu()
   document.getElementById("bm").style.display = "block"
   menu = "bm"
+  setMenu("Broadcast Sub Menu", "10")
 }
 
 function hideBroadcastMenu() {
@@ -230,6 +271,7 @@ function showStatusMenu() {
   hideMainMenu()
   document.getElementById("sm").style.display = "block"
   menu = "sm"
+  setMenu("Git Status Menu", "12")
 }
 
 function hideStatusMenu() {
@@ -240,11 +282,12 @@ function showJoinMenu() {
   hideMainMenu()
   document.getElementById("jm").style.display = "block"
   menu = "jm"
+  setMenu("Lection Joining Menu", "09")
   joinState = "lections"
   currentLectionsValue = ""
 
   document.getElementById("joinstatus").innerText = "Enter lection specifications (comma-separated)"
-  document.getElementById("joinstatus").style.color = "blue"
+  document.getElementById("joinstatus").style.color = "#5294e2"
   document.getElementById("lectionsj").innerText = ""
 }
 
@@ -257,6 +300,7 @@ function showGitMenu() {
   document.getElementById("nm").style.display = "block"
   document.getElementById("gitfooter").innerText = mkbanner("", 45, "-")
   menu = "nm"
+  setMenu("Git Integration Sub Menu", "09")
 }
 
 function hideGitMenu() {
@@ -266,6 +310,7 @@ function hideGitMenu() {
 function showMainMenu() {
   document.getElementById("mm").style.display = "block"
   menu = "mm"
+  setMenu("Main Menu")
 }
 
 function hideAddMenu() {
@@ -302,6 +347,7 @@ function showAddMenu() {
   hideGitMenu()
   document.getElementById("am").style.display = "block"
   menu = "am"
+  setMenu("Add Vocabulary Menu", "02")
   addstate = "lection"
   currentLectionValue = ""
   currentKeyValue = ""
@@ -317,11 +363,13 @@ function showCorrectMenu() {
   currentKeyCValue = ""
   currentValueCValue = ""
   currentLectionCValue = ""
+  correctState = "lection"
   document.getElementById("idc").innerText = ""
   document.getElementById("keyc").innerText = ""
   document.getElementById("valuec").innerText = ""
   document.getElementById("lectionc").innerText = ""
   menu = "cm"
+  setMenu("Correct Vocabulary Menu", "08")
   hideMainMenu()
   document.getElementById("cm").style.display = "block"
 }
@@ -334,27 +382,12 @@ async function showLectionsMenu() {
   const lections = await readAllLections()
 
   for (const item of lections) {
-    const lectionData = await readLectionData(item)
-
-    let totalAttempts = 0
-    let totalVocabulary = 0
-    let totalWrong = 0
-    let totalRight = 0
-
-    lectionData.forEach(word => {
-      const right = word.right || 0
-      const wrong = word.wrong || 0
-      totalAttempts += (right + wrong)
-      totalRight += right
-      totalWrong += wrong
-      totalVocabulary++
-    })
-
     const p = document.createElement("p")
-    p.innerText = `${item} - Average Attempt: ${(totalAttempts / totalVocabulary).toFixed(2)} - Last Success Score: ${await readGP(item + "_success")}%`
+    p.innerText = `${item} - Last Average Attempt: ${await readGP(item + "_attempt_last")} - Last Success Score: ${await readGP(item + "_success_last")}%`
     document.getElementById("lectionview").appendChild(p)
   }
   menu = "lm"
+  setMenu("Lections View", "07")
 }
 
 function showTrainMenu() {
@@ -363,6 +396,7 @@ function showTrainMenu() {
   hideGenerateMenu()
   document.getElementById("tm").style.display = "block"
   menu = "tm"
+  setMenu("Training Menu", "03")
   currentSessionScore = 0
   trainInit()
 }
@@ -374,6 +408,7 @@ function showMoveMenu() {
   hideMainMenu()
   document.getElementById("mvm").style.display = "block"
   menu = "mvm"
+  setMenu("Move Vocabulary Menu", "06")
 }
 
 function hideMainMenu() {
@@ -387,6 +422,7 @@ function hideViewMenu() {
 function showGenerateMenu() {
   document.getElementById("gm").style.display = "block"
   menu = "gm"
+  setMenu("Generate Lection Menu", "05")
   hideMainMenu()
 
   currentTransformValue = ""
@@ -401,13 +437,13 @@ function showGenerateMenu() {
   const param2El = document.getElementById("param2t")
 
   transformEl.innerText = ""
-  transformEl.style.color = "blue"
+  transformEl.style.color = "#5294e2"
   actionEl.innerText = ""
-  actionEl.style.color = "blue"
+  actionEl.style.color = "#5294e2"
   paramEl.innerText = ""
-  paramEl.style.color = "blue"
+  paramEl.style.color = "#5294e2"
   param2El.innerText = ""
-  param2El.style.color = "blue"
+  param2El.style.color = "#5294e2"
 }
 async function showViewMenu() {
   hideMainMenu()
@@ -415,11 +451,149 @@ async function showViewMenu() {
   resetView()
 
   menu = "vm"
+  setMenu("View Menu", "04")
   viewstate = "lection"
   currentLectionValue = ""
   const ilectionSelect = document.getElementById("ilectionSelect")
   ilectionSelect.innerText = ""
-  ilectionSelect.style.color = "blue"
+  ilectionSelect.style.color = "#5294e2"
+}
+
+// ——— Figure menu logic ———
+async function handleFigureMenu() {
+  const figuresEl = document.getElementById("figures");
+  if (!figuresEl) return;
+
+  figuresEl.innerHTML = "";
+
+  const lections = await readAllLections();
+
+  for (const item of lections) {
+    const header = document.createElement("h3");
+    header.innerText = item;
+    header.style.marginTop = "20px";
+    header.style.marginBottom = "15px";
+    figuresEl.appendChild(header);
+
+    let attempts = await readGP(item + "_attempt");
+    let successes = await readGP(item + "_success");
+
+    if (!Array.isArray(attempts)) attempts = [];
+    if (!Array.isArray(successes)) successes = [];
+
+    // Convert to numbers and filter out non-finite values
+    const numericAttempts = attempts
+      .map(v => typeof v === "number" ? v : Number(v))
+      .filter(n => Number.isFinite(n));
+
+    const numericSuccesses = successes
+      .map(v => typeof v === "number" ? v : Number(v))
+      .filter(n => Number.isFinite(n));
+
+    const lastTwentyAttempts = numericAttempts.slice(-20);
+    const lastTwentySuccesses = numericSuccesses.slice(-20);
+
+    const chartsContainer = document.createElement("div");
+    chartsContainer.style.display = "flex";
+    chartsContainer.style.gap = "30px";
+    chartsContainer.style.marginBottom = "20px";
+
+    // Attempt Chart Container
+    const attemptChartDiv = document.createElement("div");
+    attemptChartDiv.style.flex = "1";
+
+    if (lastTwentyAttempts.length > 0) {
+      const attemptTitle = document.createElement("p");
+      attemptTitle.innerText = "Average Attempts (Last 20 Sessions):";
+      attemptTitle.style.fontWeight = "bold";
+      attemptTitle.style.marginBottom = "5px";
+      attemptChartDiv.appendChild(attemptTitle);
+
+      const attemptChartText = asciichart.plot(lastTwentyAttempts, { height: 8 })
+      const attemptChartLines = attemptChartText.split("\n");
+      attemptChartLines.forEach(row => {
+        const pr = document.createElement("p");
+        pr.innerText = row;
+        pr.style.fontFamily = "monospace";
+        pr.style.fontSize = "12px";
+        pr.style.margin = "0";
+        pr.style.lineHeight = "1.2";
+        attemptChartDiv.appendChild(pr);
+      });
+
+      const attemptSummary = document.createElement("p");
+      attemptSummary.innerText = `Range: ${Math.min(...lastTwentyAttempts).toFixed(2)} - ${Math.max(...lastTwentyAttempts).toFixed(2)} attempts`;
+      attemptSummary.style.fontSize = "11px";
+      attemptSummary.style.color = "#666";
+      attemptSummary.style.marginTop = "5px";
+      attemptChartDiv.appendChild(attemptSummary);
+    } else {
+      const noAttemptData = document.createElement("p");
+      noAttemptData.innerText = "Average Attempts (Last 5 Sessions):";
+      noAttemptData.style.fontWeight = "bold";
+      noAttemptData.style.marginBottom = "5px";
+      attemptChartDiv.appendChild(noAttemptData);
+
+      const noDataMsg = document.createElement("p");
+      noDataMsg.innerText = "No attempt data available";
+      noDataMsg.style.color = "gray";
+      noDataMsg.style.fontStyle = "italic";
+      attemptChartDiv.appendChild(noDataMsg);
+    }
+
+    // Success Chart Container
+    const successChartDiv = document.createElement("div");
+    successChartDiv.style.flex = "1";
+
+    if (lastTwentySuccesses.length > 0) {
+      const successTitle = document.createElement("p");
+      successTitle.innerText = "Success Rate % (Last 20 Sessions):";
+      successTitle.style.fontWeight = "bold";
+      successTitle.style.marginBottom = "5px";
+      successChartDiv.appendChild(successTitle);
+
+      const successChartText = asciichart.plot(lastTwentySuccesses, { height: 8 });
+      const successChartLines = successChartText.split("\n");
+      successChartLines.forEach(row => {
+        const pr = document.createElement("p");
+        pr.innerText = row;
+        pr.style.fontFamily = "monospace";
+        pr.style.fontSize = "12px";
+        pr.style.margin = "0";
+        pr.style.lineHeight = "1.2";
+        successChartDiv.appendChild(pr);
+      });
+
+      const successSummary = document.createElement("p");
+      successSummary.innerText = `Range: ${Math.min(...lastTwentySuccesses)}% - ${Math.max(...lastTwentySuccesses)}%`;
+      successSummary.style.fontSize = "11px";
+      successSummary.style.color = "#666";
+      successSummary.style.marginTop = "5px";
+      successChartDiv.appendChild(successSummary);
+    } else {
+      const noSuccessData = document.createElement("p");
+      noSuccessData.innerText = "Success Rate % (Last 5 Sessions):";
+      noSuccessData.style.fontWeight = "bold";
+      noSuccessData.style.marginBottom = "5px";
+      successChartDiv.appendChild(noSuccessData);
+
+      const noDataMsg = document.createElement("p");
+      noDataMsg.innerText = "No success data available";
+      noDataMsg.style.color = "gray";
+      noDataMsg.style.fontStyle = "italic";
+      successChartDiv.appendChild(noDataMsg);
+    }
+
+    chartsContainer.appendChild(attemptChartDiv);
+    chartsContainer.appendChild(successChartDiv);
+    figuresEl.appendChild(chartsContainer);
+
+    const separator = document.createElement("hr");
+    separator.style.margin = "25px 0";
+    separator.style.border = "none";
+    separator.style.borderTop = "1px solid #ccc";
+    figuresEl.appendChild(separator);
+  }
 }
 // ——— Docs menu logic ———
 async function handleDocsMenu(e) {
@@ -437,7 +611,7 @@ async function handleDocsMenu(e) {
     docNum += e.key
 
     const pageNum = parseInt(docNum)
-    if (pageNum >= 1 && pageNum <= 22) {
+    if (pageNum >= 1 && pageNum <= docPages) {
       showDocPage(pageNum)
     } else {
       docState = "toc"
@@ -454,7 +628,7 @@ async function handleDocsMenu(e) {
     }
   } else if (e.key === "ArrowRight") {
     const currentPage = await readGP("currentDocPage") || 1
-    if (currentPage < 22) {
+    if (currentPage < docPages) {
       const newPage = currentPage + 1
       showDocPage(newPage)
       await writeGP("currentDocPage", newPage)
@@ -464,7 +638,7 @@ async function handleDocsMenu(e) {
 
 function hideAllDocElements() {
   document.getElementById("doctoc").style.display = "none"
-  for (let i = 1; i <= 22; i++) {
+  for (let i = 1; i <= docPages; i++) {
     const pageId = "docpage" + String(i).padStart(2, '0')
     const pageElement = document.getElementById(pageId)
     if (pageElement) {
@@ -771,7 +945,7 @@ async function handleJoinMenu(e) {
 
       try {
         document.getElementById("joinstatus").innerText = "Processing lections...";
-        document.getElementById("joinstatus").style.color = "blue";
+        document.getElementById("joinstatus").style.color = "#5294e2";
 
         // parse lections and join
         const joinedVocabulary = [];
@@ -1485,7 +1659,7 @@ async function handleCorrectMenu(e) {
       if (lections.includes(currentLectionCValue)) {
         document.getElementById("lectionc").style.color = "white"
         correctState = "id"
-        document.getElementById("idc").style.color = "blue"
+        document.getElementById("idc").style.color = "#5294e2"
       } else {
         document.getElementById("lectionc").style.color = "red"
       }
@@ -1505,7 +1679,7 @@ async function handleCorrectMenu(e) {
         if (entryExists) {
           document.getElementById("idc").style.color = "white"
           correctState = "key"
-          document.getElementById("keyc").style.color = "blue"
+          document.getElementById("keyc").style.color = "#5294e2"
           currentKeyCValue = entryExists.vocabWord
           currentValueCValue = entryExists.value
 
@@ -1528,7 +1702,7 @@ async function handleCorrectMenu(e) {
     } else if (e.key === "Enter") {
       document.getElementById("keyc").style.color = "white"
       correctState = "value"
-      document.getElementById("valuec").style.color = "blue"
+      document.getElementById("valuec").style.color = "#5294e2"
       e.preventDefault()
     } else if (e.key.length === 1) {
       currentKeyCValue += e.key
@@ -1553,9 +1727,9 @@ async function handleCorrectMenu(e) {
       document.getElementById("idc").innerText = ""
       document.getElementById("keyc").innerText = ""
       document.getElementById("valuec").innerText = ""
-      document.getElementById("idc").style.color = "blue"
-      document.getElementById("keyc").style.color = "blue"
-      document.getElementById("valuec").style.color = "blue"
+      document.getElementById("idc").style.color = "#5294e2"
+      document.getElementById("keyc").style.color = "#5294e2"
+      document.getElementById("valuec").style.color = "#5294e2"
 
       e.preventDefault()
     } else if (e.key.length === 1) {
@@ -1665,7 +1839,7 @@ function handleAddMenu(e) {
       currentValueValue = ""
       addstate = "key"
       document.getElementById("key").innerText = ""
-      document.getElementById("key").style.color = "blue"
+      document.getElementById("key").style.color = "#5294e2"
       document.getElementById("value").style.display = "none"
       document.getElementById("valuevalue").innerText = ""
       e.preventDefault()
@@ -1886,6 +2060,7 @@ async function handleMoveMenu(e) {
 // ——— Train menu logic ———
 
 async function trainInit() {
+  sessionAttempts.clear()
   currentSessionScore = 0
   trainstate = "lection"
   currentLectionValue = ""
@@ -1901,7 +2076,7 @@ async function trainInit() {
   document.getElementById("tlection").innerText = ""
   document.getElementById("tlectiont").style.color = "white"
   document.getElementById("tkey").innerText = ""
-  document.getElementById("tkey").style.color = "blue"
+  document.getElementById("tkey").style.color = "#5294e2"
   document.getElementById("tvalue").innerText = "???"
   document.getElementById("trainfooter").innerText = mkbanner("0/0", 45, "-")
   document.getElementById("stats").style.display = "none"
@@ -1942,7 +2117,7 @@ async function handleTrainMenu(e) {
     if (e.key === "Enter") {
       trainstate = "quiz"
       currentTValueValue = "" // Reset input
-      document.getElementById("tvalue").style.color = "blue"
+      document.getElementById("tvalue").style.color = "#5294e2"
       nextQuestion()
       e.preventDefault()
     }
@@ -1957,21 +2132,23 @@ async function nextQuestion() {
       "-",
     )
 
-    const lectionData = await readLectionData(currentLectionValue)
-
-    let totalAttempts = 0
-    let totalVocabulary = 0
-    let totalWrong = 0
-    let totalRight = 0
+    const lectionData = await readLectionData(selectedLection || currentLectionValue);
+    let totalWrong = 0;
+    let totalRight = 0;
 
     lectionData.forEach(word => {
-      const right = word.right || 0
-      const wrong = word.wrong || 0
-      totalAttempts += (right + wrong)
-      totalRight += right
-      totalWrong += wrong
-      totalVocabulary++
-    })
+      const right = word.right || 0;
+      const wrong = word.wrong || 0;
+      totalRight += right;
+      totalWrong += wrong;
+    });
+
+    const attemptsArray = Array.from(sessionAttempts.values());
+    const totalAttempts = attemptsArray.reduce((a, b) => a + b, 0);
+    const totalVocabulary = dataToTrain.length;
+
+    const avgAttempt = totalVocabulary > 0 ? (totalAttempts / totalVocabulary).toFixed(2) : "0.00"
+    const successScore = Math.round(currentSessionScore / totalVocabulary * 100)
 
     document.getElementById("tkey").innerText = ""
     document.getElementById("tvalue").innerText = ""
@@ -1983,10 +2160,27 @@ async function nextQuestion() {
     document.getElementById("s2").innerText = trainStats.totalWrong
     document.getElementById("s3").innerText = trainStats.hardestWord.key
     document.getElementById("s4").innerText = trainStats.hardestWord.attempts
-    document.getElementById("s5").innerText = (totalAttempts / totalVocabulary).toFixed(2)
-    document.getElementById("s6").innerText = Math.round(currentSessionScore / totalVocabulary * 100)
+    document.getElementById("s5").innerText = avgAttempt
+    document.getElementById("s6").innerText = successScore
 
-    writeGP(currentLectionValue + "_success", Math.round(currentSessionScore / totalVocabulary * 100))
+    {
+      writeGP(currentLectionValue + "_success_last", successScore)
+      const key = currentLectionValue + "_success"
+      let history = await readGP(key)
+      if (!Array.isArray(history)) history = []
+      history.push(successScore)
+      await writeGP(key, history)
+    }
+
+    {
+      writeGP(currentLectionValue + "_attempt_last", avgAttempt)
+
+      const key = currentLectionValue + "_attempt";
+      let history = await readGP(key);
+      if (!Array.isArray(history)) history = [];
+      history.push(avgAttempt);
+      await writeGP(key, history);
+    }
 
     return
   }
@@ -2016,6 +2210,7 @@ async function checkAnswer() {
   const correctValue = await getData(vocabWord)
   const tval = currentTValueValue.trim()
   const tvElt = document.getElementById("tvalue")
+  sessionAttempts.set(vocabWord, (sessionAttempts.get(vocabWord) || 0) + 1)
 
   let isCorrect = false
   if (correctValue.includes(",")) {
@@ -2069,7 +2264,7 @@ async function checkAnswer() {
     wrongAttempts.delete(vocabWord)
     shuffledKeys.pop() // Remove current word
     setTimeout(() => {
-      tvElt.style.color = "blue"
+      tvElt.style.color = "#5294e2"
       nextQuestion()
     }, 500)
   } else {
@@ -2110,7 +2305,7 @@ async function checkAnswer() {
       }
     } else {
       setTimeout(() => {
-        tvElt.style.color = "blue"
+        tvElt.style.color = "#5294e2"
         currentTValueValue = ""
         tvElt.innerText = "???"
       }, 500)
@@ -2153,11 +2348,14 @@ document.getElementById("trainbanner").innerText = mkbanner("Train vocabulary", 
 document.getElementById("viewbanner").innerText = mkbanner("View vocabulary", 45, "-")
 document.getElementById("printfooter").innerText = mkbanner("Generated by TinyVoc", 50, "-")
 document.getElementById("generateheader").innerText = mkbanner("Generate List", 45, "-")
+document.getElementById("trainfooter").innerText = mkbanner("0/0", 45, "-")
 document.getElementById("lectionviewheader").innerText = mkbanner("Lection View", 45, "-")
 document.getElementById("moveheader").innerText = mkbanner("Move List", 45, "-")
 document.getElementById("joinheader").innerText = mkbanner("Join Lections", 45, "-")
 document.getElementById("broadcastheader").innerText = mkbanner("Broadcast", 45, "-")
+document.getElementById("githeader").innerText = mkbanner("Git", 45, "-")
 document.getElementById("docsheader").innerText = mkbanner("TinyVoc Docs", 45, "-")
+document.getElementById("figureheader").innerText = mkbanner("Figure View", 45, "-")
 document.getElementById("statsfooter").innerText = mkbanner("", 45, "=")
 document.getElementById("movefooter").innerText = mkbanner("", 45, "-")
 document.getElementById("correctfooter").innerText = mkbanner("", 45, "-")
@@ -2167,10 +2365,9 @@ document.getElementById("addfooter").innerText = mkbanner("", 45, "-")
 document.getElementById("viewfooter").innerText = mkbanner("", 45, "-")
 document.getElementById("generatefooter").innerText = mkbanner("", 45, "-")
 document.getElementById("docsfooter").innerText = mkbanner("", 45, "-")
-document.getElementById("trainfooter").innerText = mkbanner("0/0", 45, "-")
 document.getElementById("lectionviewfooter").innerText = mkbanner("", 45, "-")
 document.getElementById("broadcastfooter").innerText = mkbanner("", 45, "-")
-document.getElementById("githeader").innerText = mkbanner("Git", 45, "-")
+document.getElementById("figurefooter").innerText = mkbanner("", 45, "-")
 document.getElementById("gitfooter").innerText = mkbanner("", 45, "-")
 document.getElementById("joinfooter").innerText = mkbanner("", 45, "-")
 
@@ -2589,7 +2786,7 @@ function getFile() {
           try {
             if (ev.key === "b" || ev.key === "B") {
               importText.innerHTML = "ADD MODE: Adding new vocabulary (existing data safe)..."
-              importText.style.color = "blue"
+              importText.style.color = "#5294e2"
 
               const result = await addOnlyImportData(importedData)
 

@@ -1,11 +1,23 @@
 body {
-    background-color: black;
+    padding: 0;
+    background-color: #6e727d;
     color: white;
     font-family: monospace;
 }
 
+
 strong {
-    color: rgb(0, 0, 255);
+    color: #5294e2;
+}
+
+.menu {
+    background-color: #404552;
+    width: fit-content;
+}
+
+.header {
+    background-color: #2f343f;
+    width: fit-content;
 }
 
 h1,
@@ -16,7 +28,7 @@ p {
 
 p.h1 {
     font-weight: bold;
-    font-size: 20px;
+    font-size: 15px;
 }
 
 #file {
@@ -56,4 +68,29 @@ td {
     #printfooter {
         display: flex;
     }
+}
+
+.bar {
+    position: fixed;
+    display: flex;
+    bottom: 0;
+    left: 0;
+    background-color: #404552;
+    width: 100%;
+}
+
+#barp1,
+#barp2 {
+    background-color: #2f343f;
+}
+
+#barp15 {
+    background-color: #4d525e;
+}
+
+#barp2 {
+    position: absolute;
+    right: 0;
+    z-index: 100;
+    bottom: 0;
 }

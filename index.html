@@ -1,4 +1,5 @@
 <!-- Sunday, July 6, 2025 Central European Summer Time -->
+<!-- -20 Days-->
 <!DOCTYPE html>
 <html lang="en">
 
@@ -7,39 +8,57 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>TinyVoc</title>
     <link rel="stylesheet" href="style.css">
+    <!-- Librarys -->
     <script src="lib/peer.js"></script>
+    <script src="lib/asciichart.js"></script>
+    <script type="module" src="scripts/entry.js" defer></script>
 </head>
 
 <body>
-    <div id="mm">
-        <p id="vocbanner"></p>
+    <div id="mm" class="menu">
+        <p id="vocbanner" class="header"></p>
         <p><strong>A</strong>dd vocabulary</p>
-        <p><strong>T</strong>rain vocabulary</p>
+        <p><strong>B</strong>roadcast</p>
+        <p><strong>C</strong>orrect vocabulary</p>
+        <p><strong>D</strong>ocs</p>
         <p><strong>E</strong>xport vocabulary (deprecated)</p>
+        <p><strong>F</strong>igure View</p>
+        <p><strong>G</strong>enerate List</p>
         <p id="iv"><strong>I</strong>mport vocabulary</p>
         <input style="display: none;" type="file" id="file" />
-        <p><strong>V</strong>iew</p>
-        <p><strong>G</strong>enerate List</p>
-        <p><strong>M</strong>ove List</p>
-        <p><strong>L</strong>ections View</p>
-        <p><strong>C</strong>orrect vocabulary</p>
-        <p><strong>S</strong>tatus of Git</p>
         <p><strong>J</strong>oin Lections</p>
-        <p><strong>B</strong>roadcast</p>
-        <p><strong>D</strong>ocs</p>
+        <p><strong>L</strong>ections View</p>
+        <p><strong>M</strong>ove List</p>
         <p>Git i<strong>n</strong>tegratoin</p>
+        <p><strong>S</strong>tatus of Git</p>
+        <p><strong>T</strong>rain vocabulary</p>
+        <p><strong>V</strong>iew</p>
         <p id="vocfooter"></p>
         <p>Your Selection: <strong id="selection"></strong></p>
     </div>
 
-    <div id="dm" style="display: none;">
-        <div id="docsheader"></div>
+    <div id="fm" class="menu" style="display: none;">
+        <div id="figureheader" class="header"></div>
+        <p>Press <strong>-</strong> to return to the main menu</p>
+        <div id="figurefooter"></div>
+        <div id="figures"></div>
+    </div>
+
+    <div id="dm" class="menu" style="display: none;">
+        <div id="docsheader" class="header"></div>
         <p>Press <strong>-</strong> to return to the main menu</p>
         <p>Press <strong>t</strong> to go to the TOC</p>
         <p>Press <strong>ArrowLeft</strong> to go to the previous page</p>
         <p>Press <strong>ArrowRight</strong> to go to the next page</p>
         <div id="docsfooter"></div>
         <ul id="doctoc">
+            <p class="h1"><strong>00</strong>Docs for the Docs</p>
+            <p>
+                To the left of the heading, you will see a number. <br>
+                Type the number to the left of the heading (with the padding). <br>
+                to open the page.
+            </p>
+            <br>
             <li><strong>01</strong>Concepts</li>
             <li><strong>02</strong>Entering Vocabulary</li>
             <li><strong>03</strong>Training Vocabulary</li>
@@ -50,22 +69,23 @@
             <li><strong>08</strong>Editing already entered Vocabulary</li>
             <li><strong>09</strong>Joining Lections/Lists together</li>
             <li><strong>10</strong>Sharing Lections/Lists with other Users</li>
-
-            <li><strong>11</strong>Importing Lections/Lists from a file</li>
-            <li><strong>12</strong>Git
+            <li><strong>11</strong>Show the Learning History</li>
+            <li><strong>12</strong>Reading the Bar</li>
+            <li><strong>13</strong>Importing Lections/Lists from a file</li>
+            <li><strong>14</strong>Git
                 <ul>
-                    <li><strong>13</strong>Creating a repo</li>
-                    <li><strong>14</strong>Adding/removing Lections/Lists from Tracked Lections/Lists</li>
-                    <li><strong>15</strong>Committing vocabulary</li>
-                    <li><strong>16</strong>Show Commits</li>
-                    <li><strong>17</strong>Rollback to older commit</li>
+                    <li><strong>15</strong>Creating a repo</li>
+                    <li><strong>16</strong>Adding/removing Lections/Lists from Tracked Lections/Lists</li>
+                    <li><strong>17</strong>Committing vocabulary</li>
+                    <li><strong>18</strong>Show Commits</li>
+                    <li><strong>19</strong>Rollback to older commit</li>
 
-                    <li><strong>18</strong>Branches
+                    <li><strong>20</strong>Branches
                         <ul>
-                            <li><strong>19</strong>Creating Branches</li>
-                            <li><strong>20</strong>Showing Branches</li>
-                            <li><strong>21</strong>Deleting Branches</li>
-                            <li><strong>22</strong>Switching between Branches</li>
+                            <li><strong>21</strong>Creating Branches</li>
+                            <li><strong>22</strong>Showing Branches</li>
+                            <li><strong>23</strong>Deleting Branches</li>
+                            <li><strong>24</strong>Switching between Branches</li>
                         </ul>
                     </li>
                 </ul>
@@ -289,6 +309,27 @@
             </p>
         </div>
         <div id="docpage11">
+            <p class="h1">Show the Learning History</p>
+            <p>
+                TinyVoc stores a history of the attempts and success scores of all lessons. <br>
+                To view this history, press "f" in the main menu to open the "Figure Menu". <br>
+                You will see a lesson name, and below it a diagram with, on the left, the last <br>
+                twenty average attempt scores, and on the right, the last twenty success scores <br>
+                in percent. <br><br>
+                Next – <strong>12</strong> Reading the Bar
+            </p>
+        </div>
+        <div id="docpage12">
+            <p class="h1">Reading the Bar</p>
+            <p>
+                At the bottom, you will always see a bar. On the bottom left, it shows <br>
+                which menu you are currently in. To the left of the Menu Display, you will <br>
+                see which Docpage contains a description for the current menu. If it says <br>
+                "<strong>Error</strong>: No Docs", this means that this menu has no documentation. <br><br>
+                Next – <strong>13</strong> Importing Lessons/Lists from a File
+            </p>
+        </div>
+        <div id="docpage13">
             <p class="h1">Importing Lections/Lists from a File</p>
             <p>
                 To import data from a <code>voc.tiny</code> file, press "i" in the main menu.<br>
@@ -301,10 +342,10 @@
                 with the contents of the file.<br>
                 Choosing <strong>add</strong> will keep all existing vocabulary and add new entries from the
                 file.<br><br>
-                Next – <strong>12</strong>Git
+                Next – <strong>14</strong>Git
             </p>
         </div>
-        <div id="docpage12">
+        <div id="docpage14">
             <p class="h1">Git</p>
             <p>
                 The Git integration is for advanced users who already know Git.<br>
@@ -314,11 +355,11 @@
                 To access the Git integration, press "n" in the main menu to open the Git submenu.<br>
                 You can also monitor the Git status by pressing "s" in the main menu — similar to running
                 <code>git status</code>.<br><br>
-                Next – <strong>13</strong>Creating a repo
+                Next – <strong>15</strong>Creating a repo
             </p>
         </div>
 
-        <div id="docpage13">
+        <div id="docpage15">
             <p class="h1">Creating a repo</p>
             <p>
                 Just like in Git, you need to initialize it first.<br>
@@ -326,11 +367,11 @@
                 This will enable all Git features, and the<br>
                 Git status menu will start showing information<br>
                 about the repository.<br><br>
-                Next – <strong>14</strong>Adding/removing Lections/Lists from Tracked Lections/Lists
+                Next – <strong>16</strong>Adding/removing Lections/Lists from Tracked Lections/Lists
             </p>
         </div>
 
-        <div id="docpage14">
+        <div id="docpage16">
             <p class="h1">Adding/removing Lections/Lists from Tracked Lections/Lists</p>
             <p>
                 Like in Git, you need to add files to tracking.<br>
@@ -338,33 +379,33 @@
                 Press "a" in the Git submenu to add a Lection to tracking.<br>
                 Press "r" in the Git submenu to remove a Lection from tracking.<br>
                 Untracked Lections will also appear in the Git status menu.<br><br>
-                Next – <strong>15</strong>Committing vocabulary
+                Next – <strong>17</strong>Committing vocabulary
             </p>
         </div>
 
-        <div id="docpage15">
+        <div id="docpage17">
             <p class="h1">Committing vocabulary</p>
             <p>
                 To commit your vocabulary, press "c" in the<br>
                 Git submenu. It will ask you for a<br>
                 commit message. You can verify the commit<br>
                 with <code>git log</code>. To learn more about<br>
-                <code>git log</code>, read <strong>16</strong>Show Commits.<br><br>
-                Next – <strong>16</strong>Show Commits
+                <code>git log</code>, read <strong>18</strong>Show Commits.<br><br>
+                Next – <strong>18</strong>Show Commits
             </p>
         </div>
 
-        <div id="docpage16">
+        <div id="docpage18">
             <p class="h1">Show Commits</p>
             <p>
                 In Git, you use <code>git log</code> to see all<br>
                 commits. Here, press "l" in the Git submenu<br>
                 to list all commits.<br><br>
-                Next – <strong>17</strong>Rollback to older commit
+                Next – <strong>19</strong>Rollback to older commit
             </p>
         </div>
 
-        <div id="docpage17">
+        <div id="docpage19">
             <p class="h1">Rollback to older commit</p>
             <p>
                 To replace your current vocabulary with an older<br>
@@ -373,7 +414,7 @@
                 It will ask you for a commit hash.<br>
                 You can get the commit hash by pressing "l" in the<br>
                 Git submenu. To learn more about showing commits,<br>
-                read <strong>16</strong>Show Commits.<br>
+                read <strong>18</strong>Show Commits.<br>
                 After entering the hash, it will check<br>
                 for differences between the cherry-picked<br>
                 commit and your current state. If there’s a difference,<br>
@@ -383,11 +424,11 @@
                 of your current data. If you say yes, it will replace<br>
                 the current data with the selected commit,<br>
                 but it won’t auto-commit it.<br><br>
-                Next – <strong>18</strong>Branches
+                Next – <strong>20</strong>Branches
             </p>
         </div>
 
-        <div id="docpage18">
+        <div id="docpage20">
             <p class="h1">Branches</p>
             <p>
                 Like Git, TinyVoc’s Git integration supports branches,<br>
@@ -397,11 +438,11 @@
                 it will create a branch called "master"<br>
                 and copy your current vocabulary to it.<br>
                 The "master" branch cannot be deleted.<br><br>
-                Next – <strong>19</strong>Creating Branches
+                Next – <strong>21</strong>Creating Branches
             </p>
         </div>
 
-        <div id="docpage19">
+        <div id="docpage21">
             <p class="h1">Creating Branches</p>
             <p>
                 To create a branch, open the Git submenu.<br>
@@ -409,22 +450,22 @@
                 then press "c" to create a branch. It will ask<br>
                 for a branch name. After entering it,<br>
                 the branch will be created.<br><br>
-                Next – <strong>20</strong>Showing Branches
+                Next – <strong>22</strong>Showing Branches
             </p>
         </div>
 
-        <div id="docpage20">
+        <div id="docpage22">
             <p class="h1">Showing Branches</p>
             <p>
                 To list all branches, open the Git submenu.<br>
                 Press "b" to open the branch submenu,<br>
                 then press "l" to list all branches.<br>
                 The current branch is prefixed with "* ".<br><br>
-                Next – <strong>21</strong>Deleting Branches
+                Next – <strong>23</strong>Deleting Branches
             </p>
         </div>
 
-        <div id="docpage21">
+        <div id="docpage23">
             <p class="h1">Deleting Branches</p>
             <p>
                 To delete a branch, open the Git submenu.<br>
@@ -433,24 +474,24 @@
                 It will ask for the name of the branch to delete.<br>
                 You cannot delete your current branch<br>
                 or the "master" branch.<br><br>
-                Next – <strong>22</strong>Switching between Branches
+                Next – <strong>24</strong>Switching between Branches
             </p>
         </div>
 
-        <div id="docpage22">
+        <div id="docpage24">
             <p class="h1">Switching between Branches</p>
             <p>
                 To switch branches, open the Git submenu.<br>
                 Press "e" for checkout. It will ask which<br>
                 branch you want to switch to.<br>
                 You can verify the switch using "branch list".<br>
-                To learn more, read <strong>20</strong>Showing Branches.<br>
+                To learn more, read <strong>22</strong>Showing Branches.<br>
             </p>
         </div>
     </div>
 
-    <div id="bm" style="display: none;">
-        <p id="broadcastheader"></p>
+    <div id="bm" class="menu" style="display: none;">
+        <p id="broadcastheader" class="header"></p>
         <p style="color: red;">WARNING: WebRTC relies on PeerCloud and PeerJS</p>
         <p><strong>F</strong>ile</p>
         <p><strong>W</strong>ebRTC (<strong>r</strong>ecive)</p>
@@ -463,8 +504,8 @@
         <p id="peerid"></p>
     </div>
 
-    <div id="jm" style="display: none;">
-        <p id="joinheader"></p>
+    <div id="jm" class="menu" style="display: none;">
+        <p id="joinheader" class="header"></p>
         <p>Press <strong>Enter</strong> to go to the next field</p>
         <p>Press <strong>-</strong> to return to the main menu</p>
         <p id="joinfooter"></p>
@@ -472,8 +513,8 @@
         <p id="joinstatus"></p>
     </div>
 
-    <div id="sm" style="display: none;">
-        <p id="statusheader"></p>
+    <div id="sm" class="menu" style="display: none;">
+        <p id="statusheader" class="header"></p>
         <p>Press <strong>-</strong> to return to the main menu</p>
         <p id="statusfooter"></p>
         <p>Git is <strong id="gitstatus">Disabled</strong></p>
@@ -486,8 +527,8 @@
         </div>
     </div>
 
-    <div id="nm" style="display: none;">
-        <p id="githeader"></p>
+    <div id="nm" class="menu" style="display: none;">
+        <p id="githeader" class="header"></p>
         <p style="color: red;">WARNING: This is not a full implenation of Git</p>
         <p><strong>i</strong>nit</p>
         <p><strong>a</strong>dd</p>
@@ -513,8 +554,8 @@
         </div>
     </div>
 
-    <div id="cm" style="display: none;">
-        <p id="correctbanner"></p>
+    <div id="cm" class="menu" style="display: none;">
+        <p id="correctbanner" class="header"></p>
         <p>Press <strong>Enter</strong> to go to the next field</p>
         <p>Press <strong>-</strong> to save and return to the main menu</p>
         <p id="correctfooter"></p>
@@ -524,8 +565,8 @@
         <p>Value: <strong id="valuec"></strong></p>
     </div>
 
-    <div id="am" style="display: none;">
-        <p id="addbanner"></p>
+    <div id="am" class="menu" style="display: none;">
+        <p id="addbanner" class="header"></p>
         <p>Press <strong>Enter</strong> to go to the next field</p>
         <p>Press <strong>-</strong> to save and return to the main menu</p>
         <p id="addfooter"></p>
@@ -534,8 +575,8 @@
         <p id="value">Value: <strong id="valuevalue"></strong></p>
     </div>
 
-    <div id="tm" style="display: none;">
-        <p id="trainbanner"></p>
+    <div id="tm" class="menu" style="display: none;">
+        <p id="trainbanner" class="header"></p>
         <p>Press <strong>Enter</strong> to go to the next field</p>
         <p>Press <strong>-</strong> return to the main menu</p>
         <p id="trainfooter"></p>
@@ -555,8 +596,8 @@
         </div>
     </div>
 
-    <div id="mvm" style="display:none;">
-        <p id="moveheader"></p>
+    <div id="mvm" class="menu" style="display:none;">
+        <p id="moveheader" class="header"></p>
         <p>Press <strong>-</strong> return to the main menu</p>
         <p id="movefooter"></p>
         <p>Source: <strong id="tsource"></strong></p>
@@ -564,8 +605,8 @@
         <p id="msuc"></p>
     </div>
 
-    <div id="vm" style="display: none;">
-        <p id="viewbanner"></p>
+    <div id="vm" class="menu" style="display: none;">
+        <p id="viewbanner" class="header"></p>
         <p>Press <strong>-</strong> return to the main menu</p>
         <p id="viewfooter"></p>
         <p>Select a lection: <strong id="ilectionSelect"></strong></p>
@@ -586,16 +627,16 @@
         <p id="printfooter"></p>
     </div>
 
-    <div id="lm" style="display: none;">
-        <p id="lectionviewheader"></p>
+    <div id="lm" class="menu" style="display: none;">
+        <p id="lectionviewheader" class="header"></p>
         <p>Press <strong>-</strong> return to the main menu</p>
         <p id="lectionviewfooter"></p>
         <div id="lectionview"></div>
     </div>
 
 
-    <div id="gm" style="display: none;">
-        <p id="generateheader"></p>
+    <div id="gm" class="menu" style="display: none;">
+        <p id="generateheader" class="header"></p>
         <p>Press <strong>-</strong> return to the main menu</p>
         <p id="generatefooter"></p>
         <p>List to transform: <strong id="transformt"></strong></p>
@@ -604,7 +645,12 @@
         <p id="param2">Param 2: <strong id="param2t"></strong></p>
         <p id="tsuccses">Transformed into <strong id="ttransto"></strong></p>
     </div>
-    <script src="app.js" defer></script>
+
+    <div class="bar">
+        <div id="barp1">Main Menu</div>
+        <div id="barp15"><strong id="bardoc">Error</strong> No Docs</div>
+        <div id="barp2">00:00</div>
+    </div>
 </body>
 
 </html>

@@ -1,0 +1,27 @@
+// display.js - display utils
+import { vars } from "../../scripts/vars.js"
+import { setMenu } from "../../scripts/setMenu.js"
+import { readGP } from "../../scripts/dbHelpers/generalPurpose/readGP.js"
+import { hideMainMenu } from "../mm/display.js"
+import { readAllLections } from "../../scripts/dbHelpers/read.js"
+
+async function showLectionsMenu() {
+  document.getElementById("lm").style.display = "block"
+  hideMainMenu()
+  // Render articles
+  document.getElementById("lectionview").innerHTML = ""
+  const lections = await readAllLections()
+
+  for (const item of lections) {
+    const p = document.createElement("p")
+    p.innerText = `${item} - Last Average Attempt: ${await readGP(item + "_attempt_last")} - Last Success Score: ${await readGP(item + "_success_last")}%`
+    document.getElementById("lectionview").appendChild(p)
+  }
+  vars.menu = "lm"
+  setMenu("Lections View", "07")
+}
+
+function hideLectionsMenu() {
+  document.getElementById("lm").style.display = "none"
+}
+export { showLectionsMenu, hideLectionsMenu }
