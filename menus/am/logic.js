@@ -7,9 +7,14 @@ function handleAddMenu(e) {
     if (e.key === "Backspace")
       vars.currentLectionValue = vars.currentLectionValue.slice(0, -1)
     else if (e.key === "Enter") {
-      vars.addstate = "key"
-      document.getElementById("lectiont").style.color = "white"
-      e.preventDefault()
+      if (vars.currentLectionValue.endsWith("/")) {
+        document.getElementById("lection").style.color = "red"
+      } else {
+        vars.addstate = "key"
+        document.getElementById("lection").style.color = "white"
+        document.getElementById("lectiont").style.color = "white"
+        e.preventDefault()
+      }
     } else if (e.key.length === 1) vars.currentLectionValue += e.key
     document.getElementById("lection").innerText = vars.currentLectionValue
   } else if (vars.addstate === "key") {

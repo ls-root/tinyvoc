@@ -14,7 +14,12 @@ async function showLectionsMenu() {
 
   for (const item of lections) {
     const p = document.createElement("p")
-    p.innerText = `${item} - Last Average Attempt: ${await readGP(item + "_attempt_last")} - Last Success Score: ${await readGP(item + "_success_last")}%`
+    if (item.split("/").length <= 2) {
+      let firstSlashIndex = item.indexOf("/")
+      let firstPart = item.substring(0, firstSlashIndex)
+      let secondPart = item.substring(firstSlashIndex)
+      p.innerHTML = `<strong>${firstPart}</strong>${secondPart} - Last Average Attempt: ${await readGP(item + "_attempt_last")} - Last Success Score: ${await readGP(item + "_success_last")}%`
+    }
     document.getElementById("lectionview").appendChild(p)
   }
   vars.menu = "lm"
