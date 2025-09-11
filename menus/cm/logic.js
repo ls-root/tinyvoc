@@ -15,7 +15,7 @@ async function handleCorrectMenu(e) {
         vars.correctState = "id"
         document.getElementById("idc").style.color = "#5294e2"
       } else {
-        document.getElementById("lectionc").style.color = "red"
+        document.getElementById("lectionc").style.color = "#ea4f4f"
       }
       e.preventDefault()
     } else if (e.key.length === 1) {
@@ -40,10 +40,10 @@ async function handleCorrectMenu(e) {
           document.getElementById("keyc").innerText = vars.currentKeyCValue
           document.getElementById("valuec").innerText = vars.currentValueCValue
         } else {
-          document.getElementById("idc").style.color = "red"
+          document.getElementById("idc").style.color = "#ea4f4f"
         }
       } else {
-        document.getElementById("idc").style.color = "red"
+        document.getElementById("idc").style.color = "#ea4f4f"
       }
       e.preventDefault()
     } else if (e.key.length === 1) {

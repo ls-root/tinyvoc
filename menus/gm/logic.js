@@ -21,7 +21,7 @@ async function handleGenerateMenu(e) {
         transformEl.style.color = "white"
         vars.generateState = "action"
       } else {
-        transformEl.style.color = "red"
+        transformEl.style.color = "#ea4f4f"
       }
       e.preventDefault()
     } else if (e.key.length === 1) {
@@ -49,7 +49,7 @@ async function handleGenerateMenu(e) {
           vars.generateState = "param"
         }
       } else {
-        actionEl.style.color = "red"
+        actionEl.style.color = "#ea4f4f"
       }
       e.preventDefault()
     } else if (e.key.length === 1) {

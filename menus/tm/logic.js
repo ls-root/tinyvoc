@@ -22,7 +22,7 @@ async function handleTrainMenu(e) {
         vars.trainstate = "quiz"
         nextQuestion()
       } else {
-        document.getElementById("tlection").style.color = "red"
+        document.getElementById("tlection").style.color = "#ea4f4f"
       }
       e.preventDefault()
     } else if (e.key.length === 1) vars.currentLectionValue += e.key

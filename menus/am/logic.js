@@ -8,7 +8,7 @@ function handleAddMenu(e) {
       vars.currentLectionValue = vars.currentLectionValue.slice(0, -1)
     else if (e.key === "Enter") {
       if (vars.currentLectionValue.endsWith("/")) {
-        document.getElementById("lection").style.color = "red"
+        document.getElementById("lection").style.color = "#ea4f4f"
       } else {
         vars.addstate = "key"
         document.getElementById("lection").style.color = "white"

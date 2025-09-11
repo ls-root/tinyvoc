@@ -42,6 +42,7 @@ var vars = {
   currentKey: "",
   docPages: 24,
   db: "",
+  themeColor: "#5294e2",
   currentSessionScore: 0,
   AvabialeModes: Array.from({ length: 5 }, (e, i) => i),
   trainStats: {

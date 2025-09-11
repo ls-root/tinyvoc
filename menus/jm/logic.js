@@ -217,7 +217,7 @@ async function handleJoinMenu(e) {
           document.getElementById("joinstatus").style.color = "green";
         } else {
           document.getElementById("joinstatus").innerText = "No vocabulary items found to join";
-          document.getElementById("joinstatus").style.color = "red";
+          document.getElementById("joinstatus").style.color = "#ea4f4f";
         }
 
         // Reset
@@ -226,7 +226,7 @@ async function handleJoinMenu(e) {
 
       } catch (error) {
         document.getElementById("joinstatus").innerText = "Error: " + error.message;
-        document.getElementById("joinstatus").style.color = "red";
+        document.getElementById("joinstatus").style.color = "#ea4f4f";
         vars.joinState = "lections";
       }
 

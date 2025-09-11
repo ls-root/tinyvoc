@@ -41,11 +41,11 @@ async function handleViewMenu(e) {
               data = data.concat(lectionData)
             }
           } else {
-            ilectionSelect.style.color = "red"
+            ilectionSelect.style.color = "#ea4f4f"
             return
           }
         } else {
-          ilectionSelect.style.color = "red"
+          ilectionSelect.style.color = "#ea4f4f"
           return
         }
       }

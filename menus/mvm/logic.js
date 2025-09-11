@@ -16,7 +16,7 @@ async function handleMoveMenu(e) {
         sourceEl.style.color = "white"
         vars.moveState = "destination"
       } else {
-        sourceEl.style.color = "red"
+        sourceEl.style.color = "#ea4f4f"
       }
     } else if (e.key.length === 1) {
       vars.currentSourceValue += e.key

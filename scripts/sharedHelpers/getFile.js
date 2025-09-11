@@ -56,7 +56,7 @@ function getFile() {
 
             } else if (ev.key === "o" || ev.key === "O") {
               importText.innerHTML = "OVERWRITE MODE: This will delete ALL existing data!"
-              importText.style.color = "red"
+              importText.style.color = "#ea4f4f"
 
               setTimeout(async () => {
                 try {
@@ -72,7 +72,7 @@ function getFile() {
                   setTimeout(() => location.reload(), 2000)
                 } catch (error) {
                   importText.innerHTML = `OVERWRITE Failed: ${error.message}`
-                  importText.style.color = "red"
+                  importText.style.color = "#ea4f4f"
                   setTimeout(() => location.reload(), 3000)
                 }
               }, 1000)
@@ -88,7 +88,7 @@ function getFile() {
           } catch (error) {
             console.error("Import operation failed:", error)
             importText.innerHTML = `Import failed: ${error.message}<br>Press any key to reload.`
-            importText.style.color = "red"
+            importText.style.color = "#ea4f4f"
 
             const errorHandler = () => {
               document.removeEventListener("keydown", errorHandler)
@@ -105,7 +105,7 @@ function getFile() {
         importText.style.display = "block"
         fileInput.style.display = "none"
         importText.innerHTML = "Invalid file format."
-        importText.style.color = "red"
+        importText.style.color = "#ea4f4f"
 
         const parseErrorHandler = () => {
           document.removeEventListener("keydown", parseErrorHandler)

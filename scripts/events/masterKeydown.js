@@ -43,7 +43,7 @@ function masterKeydown() {
     sel.innerText = e.key
     sel.style.color = [
       "a", "t", "A", "T", "e", "E", "i", "I", "v", "V", "g", "G", "m", "M", "l", "L", "c", "C", "n", "N", "s", "S", "p", "P", "j", "J", "b", "B", "f", "F", "-", "Enter",
-    ].includes(e.key) ? "#5294e2" : "red"
+    ].includes(e.key) ? "#5294e2" : "#ea4f4f"
 
     // MAIN MENU
     if (vars.menu === "mm") {

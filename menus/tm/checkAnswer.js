@@ -28,7 +28,7 @@ async function checkAnswer() {
     isCorrect = tval.toLowerCase() === correctValue.toLowerCase()
   }
 
-  tvElt.style.color = isCorrect ? "green" : "red"
+  tvElt.style.color = isCorrect ? "green" : "#ea4f4f"
 
   const currentWrongAttempts = vars.wrongAttempts.get(vocabWord) || 0
 

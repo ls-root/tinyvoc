@@ -117,7 +117,7 @@ document.addEventListener("keydown", async (e) => {
     "Enter",
   ].includes(e.key)
     ? "#5294e2"
-    : "red"
+    : "#ea4f4f"
 
   // MAIN MENU
   if (menu === "mm") {
@@ -755,7 +755,7 @@ async function handleBroadcastMenu(e) {
           broadcastState = "main"
           currentBroadcastValue = ""
         } else {
-          document.getElementById("broadcasti").style.color = "red"
+          document.getElementById("broadcasti").style.color = "#ea4f4f"
         }
       }
     } else if (e.key === "Escape") {
@@ -815,7 +815,7 @@ async function handleBroadcastMenu(e) {
             currentBroadcastValue = ""
           })
         } else {
-          document.getElementById("broadcasti").style.color = "red"
+          document.getElementById("broadcasti").style.color = "#ea4f4f"
         }
       }
     } else if (e.key === "Escape") {
@@ -1154,7 +1154,7 @@ async function handleJoinMenu(e) {
           document.getElementById("joinstatus").style.color = "green";
         } else {
           document.getElementById("joinstatus").innerText = "No vocabulary items found to join";
-          document.getElementById("joinstatus").style.color = "red";
+          document.getElementById("joinstatus").style.color = "#ea4f4f";
         }
 
         // Reset
@@ -1163,7 +1163,7 @@ async function handleJoinMenu(e) {
 
       } catch (error) {
         document.getElementById("joinstatus").innerText = "Error: " + error.message;
-        document.getElementById("joinstatus").style.color = "red";
+        document.getElementById("joinstatus").style.color = "#ea4f4f";
         joinState = "lections";
       }
 
@@ -1607,7 +1607,7 @@ async function handleStatusMenu() {
       const untrackedFileElement = document.createElement("p")
       untrackedFileElement.innerText = item
       untrackedFileElement.style.marginLeft = "20px"
-      untrackedFileElement.style.color = "red"
+      untrackedFileElement.style.color = "#ea4f4f"
       document.getElementById("untracked").appendChild(untrackedFileElement)
     })
     // Get modified files
@@ -1639,7 +1639,7 @@ async function handleStatusMenu() {
       const modifiedElement = document.createElement("p")
       modifiedElement.innerText = "modified: " + item
       modifiedElement.style.marginLeft = "20px"
-      modifiedElement.style.color = "red"
+      modifiedElement.style.color = "#ea4f4f"
       document.getElementById("modifiedfiles").appendChild(modifiedElement)
     })
   } else {
@@ -1661,7 +1661,7 @@ async function handleCorrectMenu(e) {
         correctState = "id"
         document.getElementById("idc").style.color = "#5294e2"
       } else {
-        document.getElementById("lectionc").style.color = "red"
+        document.getElementById("lectionc").style.color = "#ea4f4f"
       }
       e.preventDefault()
     } else if (e.key.length === 1) {
@@ -1686,10 +1686,10 @@ async function handleCorrectMenu(e) {
           document.getElementById("keyc").innerText = currentKeyCValue
           document.getElementById("valuec").innerText = currentValueCValue
         } else {
-          document.getElementById("idc").style.color = "red"
+          document.getElementById("idc").style.color = "#ea4f4f"
         }
       } else {
-        document.getElementById("idc").style.color = "red"
+        document.getElementById("idc").style.color = "#ea4f4f"
       }
       e.preventDefault()
     } else if (e.key.length === 1) {
@@ -1783,7 +1783,7 @@ async function handleViewMenu(e) {
         if (lections.includes(currentLectionValue)) {
           data = await readLectionData(currentLectionValue)
         } else {
-          ilectionSelect.style.color = "red"
+          ilectionSelect.style.color = "#ea4f4f"
           return
         }
       }
@@ -1867,7 +1867,7 @@ async function handleGenerateMenu(e) {
         transformEl.style.color = "white"
         generateState = "action"
       } else {
-        transformEl.style.color = "red"
+        transformEl.style.color = "#ea4f4f"
       }
       e.preventDefault()
     } else if (e.key.length === 1) {
@@ -1895,7 +1895,7 @@ async function handleGenerateMenu(e) {
           generateState = "param"
         }
       } else {
-        actionEl.style.color = "red"
+        actionEl.style.color = "#ea4f4f"
       }
       e.preventDefault()
     } else if (e.key.length === 1) {
@@ -2028,7 +2028,7 @@ async function handleMoveMenu(e) {
         sourceEl.style.color = "white"
         moveState = "destination"
       } else {
-        sourceEl.style.color = "red"
+        sourceEl.style.color = "#ea4f4f"
       }
     } else if (e.key.length === 1) {
       currentSourceValue += e.key
@@ -2100,7 +2100,7 @@ async function handleTrainMenu(e) {
         trainstate = "quiz"
         nextQuestion()
       } else {
-        document.getElementById("tlection").style.color = "red"
+        document.getElementById("tlection").style.color = "#ea4f4f"
       }
       e.preventDefault()
     } else if (e.key.length === 1) currentLectionValue += e.key
@@ -2229,7 +2229,7 @@ async function checkAnswer() {
     isCorrect = tval.toLowerCase() === correctValue.toLowerCase()
   }
 
-  tvElt.style.color = isCorrect ? "green" : "red"
+  tvElt.style.color = isCorrect ? "green" : "#ea4f4f"
 
   const currentWrongAttempts = wrongAttempts.get(vocabWord) || 0
 
@@ -2802,7 +2802,7 @@ function getFile() {
 
             } else if (ev.key === "o" || ev.key === "O") {
               importText.innerHTML = "OVERWRITE MODE: This will delete ALL existing data!"
-              importText.style.color = "red"
+              importText.style.color = "#ea4f4f"
 
               setTimeout(async () => {
                 try {
@@ -2818,7 +2818,7 @@ function getFile() {
                   setTimeout(() => location.reload(), 2000)
                 } catch (error) {
                   importText.innerHTML = `OVERWRITE Failed: ${error.message}`
-                  importText.style.color = "red"
+                  importText.style.color = "#ea4f4f"
                   setTimeout(() => location.reload(), 3000)
                 }
               }, 1000)
@@ -2834,7 +2834,7 @@ function getFile() {
           } catch (error) {
             console.error("Import operation failed:", error)
             importText.innerHTML = `Import failed: ${error.message}<br>Press any key to reload.`
-            importText.style.color = "red"
+            importText.style.color = "#ea4f4f"
 
             const errorHandler = () => {
               document.removeEventListener("keydown", errorHandler)
@@ -2851,7 +2851,7 @@ function getFile() {
         importText.style.display = "block"
         fileInput.style.display = "none"
         importText.innerHTML = "Invalid file format. Press any key to try again."
-        importText.style.color = "red"
+        importText.style.color = "#ea4f4f"
 
         const parseErrorHandler = () => {
           document.removeEventListener("keydown", parseErrorHandler)

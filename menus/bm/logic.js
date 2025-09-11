@@ -104,7 +104,7 @@ async function handleBroadcastMenu(e) {
           vars.broadcastState = "main"
           vars.currentBroadcastValue = ""
         } else {
-          document.getElementById("broadcasti").style.color = "red"
+          document.getElementById("broadcasti").style.color = "#ea4f4f"
         }
       }
     } else if (e.key === "Escape") {
@@ -164,7 +164,7 @@ async function handleBroadcastMenu(e) {
             vars.currentBroadcastValue = ""
           })
         } else {
-          document.getElementById("broadcasti").style.color = "red"
+          document.getElementById("broadcasti").style.color = "#ea4f4f"
         }
       }
     } else if (e.key === "Escape") {

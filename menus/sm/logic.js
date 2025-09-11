@@ -20,7 +20,7 @@ async function handleStatusMenu() {
       const untrackedFileElement = document.createElement("p")
       untrackedFileElement.innerText = item
       untrackedFileElement.style.marginLeft = "20px"
-      untrackedFileElement.style.color = "red"
+      untrackedFileElement.style.color = "#ea4f4f"
       document.getElementById("untracked").appendChild(untrackedFileElement)
     })
     // Get modified files
@@ -52,7 +52,7 @@ async function handleStatusMenu() {
       const modifiedElement = document.createElement("p")
       modifiedElement.innerText = "modified: " + item
       modifiedElement.style.marginLeft = "20px"
-      modifiedElement.style.color = "red"
+      modifiedElement.style.color = "#ea4f4f"
       document.getElementById("modifiedfiles").appendChild(modifiedElement)
     })
   } else {
