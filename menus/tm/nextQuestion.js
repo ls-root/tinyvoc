@@ -24,6 +24,7 @@ async function nextQuestion() {
       totalWrong += wrong;
     });
 
+    vars.trainstate = "finished"
     const attemptsArray = Array.from(vars.sessionAttempts.values());
     const totalAttempts = attemptsArray.reduce((a, b) => a + b, 0);
     const totalVocabulary = vars.dataToTrain.length;
