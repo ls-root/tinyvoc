@@ -3,6 +3,7 @@ import { mkbanner } from "./sharedHelpers/banner.js"
 
 function bannerInit() {
   document.getElementById("statusheader").innerText = mkbanner("Git Status", 45, "-")
+  document.getElementById("configurationheader").innerText = mkbanner("Configuration", 45, "-")
   document.getElementById("correctbanner").innerText = mkbanner("Correct vocabulary", 45, "-")
   document.getElementById("statsbanner").innerText = mkbanner("Training Statistics", 45, "=")
   document.getElementById("vocbanner").innerText = mkbanner("TinyVoc", 45, "-")
@@ -19,6 +20,7 @@ function bannerInit() {
   document.getElementById("githeader").innerText = mkbanner("Git", 45, "-")
   document.getElementById("docsheader").innerText = mkbanner("TinyVoc Docs", 45, "-")
   document.getElementById("figureheader").innerText = mkbanner("Figure View", 45, "-")
+  document.getElementById("configurationfooter").innerText = mkbanner("", 45, "-")
   document.getElementById("statsfooter").innerText = mkbanner("", 45, "=")
   document.getElementById("movefooter").innerText = mkbanner("", 45, "-")
   document.getElementById("correctfooter").innerText = mkbanner("", 45, "-")

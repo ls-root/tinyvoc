@@ -94,3 +94,20 @@ td {
     z-index: 100;
     bottom: 0;
 }
+
+#bootUpMessageContainer {
+    width: 80%;
+    padding: 4px;
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    transform: translate(-50%, -50%);
+}
+
+#bootUpMessageContainer h1 {
+    background-color: #2f343f;
+}
+
+#bootUpMessageContainer {
+    background-color: #404552;
+}

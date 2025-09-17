@@ -30,6 +30,7 @@
         <p><strong>L</strong>ections View</p>
         <p><strong>M</strong>ove List</p>
         <p>Git i<strong>n</strong>tegratoin</p>
+        <p>C<strong>o</strong>nfiguration</p>
         <p><strong>S</strong>tatus of Git</p>
         <p><strong>T</strong>rain vocabulary</p>
         <p><strong>V</strong>iew</p>
@@ -37,16 +38,29 @@
         <p>Your Selection: <strong id="selection"></strong></p>
     </div>
 
+    <div id="om" class="menu" style="display: none;">
+        <div id="configurationheader" class="header"></div>
+        <p style="color: red;">WARNING: You can break TinyVoc</p>
+        <p style="color: red;"><span style="opacity: 0;">WARNING:</span> Read Docs for Help</p>
+        <p>Press <strong class="mxk">-</strong> to return to the main menu</p>
+        <p>Press <strong>j</strong> to go down</p>
+        <p>Press <strong>k</strong> to go up</p>
+        <p>Press <strong>Enter</strong> to start editing the value</p>
+        <div id="configurationfooter" class="header"></div>
+        <p><strong id="c1-i"></strong>Menu Exit Key: <strong id="c1-v">Loading ...</strong></p>
+        <p><strong id="c2-i"></strong>Ignore Case: <strong id="c2-v">Loading ...</strong></p>
+    </div>
+
     <div id="fm" class="menu" style="display: none;">
         <div id="figureheader" class="header"></div>
-        <p>Press <strong>-</strong> to return to the main menu</p>
+        <p>Press <strong class="mxk">-</strong> to return to the main menu</p>
         <div id="figurefooter"></div>
         <div id="figures"></div>
     </div>
 
     <div id="dm" class="menu" style="display: none;">
         <div id="docsheader" class="header"></div>
-        <p>Press <strong>-</strong> to return to the main menu</p>
+        <p>Press <strong class="mxk">-</strong> to return to the main menu</p>
         <p>Press <strong>t</strong> to go to the TOC</p>
         <p>Press <strong>ArrowLeft</strong> to go to the previous page</p>
         <p>Press <strong>ArrowRight</strong> to go to the next page</p>
@@ -90,6 +104,7 @@
                     </li>
                 </ul>
             </li>
+            <li><strong>25</strong>Configuring TinyVoc</li>
         </ul>
         <!-- doc pages-->
         <div id="docpage01">
@@ -492,6 +507,23 @@
                 branch you want to switch to.<br>
                 You can verify the switch using "branch list".<br>
                 To learn more, read <strong>22</strong>Showing Branches.<br>
+                Next - <strong>25</strong>Configuring TinyVoc
+            </p>
+        </div>
+
+        <div id="docpage25">
+            <p class="h1">Configuring TinyVoc</p>
+            <p>
+                You can configure TinyVoc in the configuration menu by pressing "e" <br>
+                in the main menu. You will find multiple options. You can select <br>
+                an entry by pressing "j" and "k"; arrow keys are also allowed. <br>
+                The currently selected item is marked with the "=>" prefix. <br>
+                Press Enter to start editing; the prefix will change to ">". <br>
+                After pressing Enter, it will be saved. Note: you cannot change <br>
+                the type of an entry that is a boolean. <br>
+                Be careful—some changes can break TinyVoc. If TinyVoc breaks, <br>
+                add "#ResetConfig" at the end of the URL you are using TinyVoc with. <br>
+                This will reset TinyVoc's configuration to the default.
             </p>
         </div>
     </div>
@@ -502,7 +534,7 @@
         <p><strong>F</strong>ile</p>
         <p><strong>W</strong>ebRTC (<strong>r</strong>ecive)</p>
         <p><strong>W</strong>ebRTC (<strong>s</strong>end)</p>
-        <p>Press <strong>-</strong> to return to the main menu</p>
+        <p>Press <strong class="mxk">-</strong> to return to the main menu</p>
         <p id="broadcastfooter"></p>
         <div id="broadcast" style="display: none;">
             <p id="broadcastt">Lections:&nbsp;</p>&nbsp; <strong id="broadcasti"></strong>
@@ -513,7 +545,7 @@
     <div id="jm" class="menu" style="display: none;">
         <p id="joinheader" class="header"></p>
         <p>Press <strong>Enter</strong> to go to the next field</p>
-        <p>Press <strong>-</strong> to return to the main menu</p>
+        <p>Press <strong class="mxk">-</strong> to return to the main menu</p>
         <p id="joinfooter"></p>
         <p>Lections: <strong id="lectionsj"></strong></p>
         <p id="joinstatus"></p>
@@ -521,7 +553,7 @@
 
     <div id="sm" class="menu" style="display: none;">
         <p id="statusheader" class="header"></p>
-        <p>Press <strong>-</strong> to return to the main menu</p>
+        <p>Press <strong class="mxk">-</strong> to return to the main menu</p>
         <p id="statusfooter"></p>
         <p>Git is <strong id="gitstatus">Disabled</strong></p>
         <div id="ifgit" style="display: none;">
@@ -546,7 +578,7 @@
         <p><strong>b</strong>ranch <strong>d</strong>elte</p>
         <p>ch<strong>e</strong>ckout</p>
         <p>c<strong>h</strong>erry-pick</p>
-        <p>Press <strong>-</strong> to return to the main menu</p>
+        <p>Press <strong class="mxk">-</strong> to return to the main menu</p>
         <p id="gitfooter"></p>
         <p id="gitparamf" style="display: none;">
             <span id="gitparam">file</span>:
@@ -563,7 +595,7 @@
     <div id="cm" class="menu" style="display: none;">
         <p id="correctbanner" class="header"></p>
         <p>Press <strong>Enter</strong> to go to the next field</p>
-        <p>Press <strong>-</strong> to save and return to the main menu</p>
+        <p>Press <strong class="mxk">-</strong> to save and return to the main menu</p>
         <p id="correctfooter"></p>
         <p>Lection: <strong id="lectionc"></strong></p>
         <p>ID: <strong id="idc"></strong></p>
@@ -574,7 +606,7 @@
     <div id="am" class="menu" style="display: none;">
         <p id="addbanner" class="header"></p>
         <p>Press <strong>Enter</strong> to go to the next field</p>
-        <p>Press <strong>-</strong> to save and return to the main menu</p>
+        <p>Press <strong class="mxk">-</strong> to save and return to the main menu</p>
         <p id="addfooter"></p>
         <p id="lectiont">Lection: <strong id="lection"></strong></p>
         <p>Key: <strong id="key"></strong></p>
@@ -584,7 +616,7 @@
     <div id="tm" class="menu" style="display: none;">
         <p id="trainbanner" class="header"></p>
         <p>Press <strong>Enter</strong> to go to the next field</p>
-        <p>Press <strong>-</strong> return to the main menu</p>
+        <p>Press <strong class="mxk">-</strong> return to the main menu</p>
         <p id="trainfooter"></p>
         <p id="tlectiont">Lection: <strong id="tlection"></strong></p>
         <div id="nstats">
@@ -604,7 +636,7 @@
 
     <div id="mvm" class="menu" style="display:none;">
         <p id="moveheader" class="header"></p>
-        <p>Press <strong>-</strong> return to the main menu</p>
+        <p>Press <strong class="mxk">-</strong> return to the main menu</p>
         <p id="movefooter"></p>
         <p>Source: <strong id="tsource"></strong></p>
         <p>Destination: <strong id="tdest"></strong></p>
@@ -613,7 +645,7 @@
 
     <div id="vm" class="menu" style="display: none;">
         <p id="viewbanner" class="header"></p>
-        <p>Press <strong>-</strong> return to the main menu</p>
+        <p>Press <strong class="mxk">-</strong> return to the main menu</p>
         <p id="viewfooter"></p>
         <p>Select a lection: <strong id="ilectionSelect"></strong></p>
         <table>
@@ -635,7 +667,7 @@
 
     <div id="lm" class="menu" style="display: none;">
         <p id="lectionviewheader" class="header"></p>
-        <p>Press <strong>-</strong> return to the main menu</p>
+        <p>Press <strong class="mxk">-</strong> return to the main menu</p>
         <p id="lectionviewfooter"></p>
         <div id="lectionview"></div>
     </div>
@@ -643,7 +675,7 @@
 
     <div id="gm" class="menu" style="display: none;">
         <p id="generateheader" class="header"></p>
-        <p>Press <strong>-</strong> return to the main menu</p>
+        <p>Press <strong class="mxk">-</strong> return to the main menu</p>
         <p id="generatefooter"></p>
         <p>List to transform: <strong id="transformt"></strong></p>
         <p>Transform action: <strong id="actiont"></strong></p>
@@ -658,5 +690,9 @@
         <div id="barp2">00:00</div>
     </div>
 </body>
+
+</html>
+
+</html>
 
 </html>

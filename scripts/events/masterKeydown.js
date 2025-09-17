@@ -12,6 +12,7 @@ import { showLectionsMenu, hideLectionsMenu } from "../../menus/lm/display.js"
 import { showMainMenu, hideMainMenu } from "../../menus/mm/display.js"
 import { showMoveMenu, hideMoveMenu } from "../../menus/mvm/display.js"
 import { showGitMenu, hideGitMenu } from "../../menus/nm/display.js"
+import { showConfigurationMenu, hideConfigurationMenu } from "../../menus/om/display.js"
 import { showStatusMenu, hideStatusMenu } from "../../menus/sm/display.js"
 import { showTrainMenu, hideTrainMenu } from "../../menus/tm/display.js"
 import { showViewMenu, hideViewMenu } from "../../menus/vm/display.js"
@@ -27,6 +28,7 @@ import { handleGitMenu } from "../../menus/nm/logic.js"
 import { handleStatusMenu } from "../../menus/sm/logic.js"
 import { handleTrainMenu } from "../../menus/tm/logic.js"
 import { handleViewMenu } from "../../menus/vm/logic.js"
+import { handleConfigurationMenu } from "../../menus/om/logic.js"
 
 import { download } from "../sharedHelpers/download.js"
 import { getFile } from "../sharedHelpers/getFile.js"
@@ -42,7 +44,7 @@ function masterKeydown() {
     const sel = document.getElementById("selection")
     sel.innerText = e.key
     sel.style.color = [
-      "a", "t", "A", "T", "e", "E", "i", "I", "v", "V", "g", "G", "m", "M", "l", "L", "c", "C", "n", "N", "s", "S", "p", "P", "j", "J", "b", "B", "f", "F", "-", "Enter",
+      "a", "t", "A", "T", "e", "E", "i", "I", "v", "V", "g", "G", "m", "M", "l", "L", "c", "C", "n", "N", "s", "S", "p", "P", "j", "J", "b", "B", "f", "F", "o", "O", "-", "Enter",
     ].includes(e.key) ? "#5294e2" : "#ea4f4f"
 
     // MAIN MENU
@@ -77,14 +79,17 @@ function masterKeydown() {
         showDocsMenu(); return
       } else if (e.key === "f" || e.key === "F") {
         showFigureMenu(); return
+      } else if (e.key === "o" || e.key === "O") {
+        showConfigurationMenu(); return
       }
     }
     // BACK TO MAIN
-    if (e.key === "-") {
+    if (e.key === vars.configuration["MenuExitKey"]) {
       const isInInputState = (
         (vars.menu === "jm" && vars.joinState === "lections") ||
         (vars.menu === "nm" && vars.gitState === "textField") ||
-        (vars.menu === "bm" && (vars.broadcastState === "lections" || vars.broadcastState === "peerid" || vars.broadcastState === "send_lections"))
+        (vars.menu === "bm" && (vars.broadcastState === "lections" || vars.broadcastState === "peerid" || vars.broadcastState === "send_lections")) ||
+        (vars.menu === "om" && vars.configurationState === "edit")
       )
 
       if (!isInInputState) {
@@ -95,6 +100,7 @@ function masterKeydown() {
         hideViewMenu()
         hideGenerateMenu()
         hideMoveMenu()
+        hideConfigurationMenu()
         hideLectionsMenu()
         hideBroadcastMenu()
         hideCorrectMenu()
@@ -137,6 +143,9 @@ function masterKeydown() {
 
     // DOCS MENU
     if (vars.menu === "dm") handleDocsMenu(e)
+
+    // CONFIGURATION MENU
+    if (vars.menu == "om") handleConfigurationMenu(e)
   })
 }
 

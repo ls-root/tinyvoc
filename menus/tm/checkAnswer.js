@@ -25,7 +25,11 @@ async function checkAnswer() {
       correctParts.length === userParts.length &&
       correctParts.every((part, index) => part === userParts[index])
   } else {
-    isCorrect = tval.toLowerCase() === correctValue.toLowerCase()
+    if (vars.configuration["IgnoreCase"]) {
+      isCorrect = tval.toLowerCase() === correctValue.toLowerCase()
+    } else {
+      isCorrect = tval === correctValue
+    }
   }
 
   tvElt.style.color = isCorrect ? "green" : "#ea4f4f"
