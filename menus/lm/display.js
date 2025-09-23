@@ -12,6 +12,9 @@ async function showLectionsMenu() {
   document.getElementById("lectionview").innerHTML = ""
   const lections = await readAllLections()
 
+  // Sort alphabetically
+  lections.sort()
+
   for (const item of lections) {
     const p = document.createElement("p")
     if (item.split("/").length <= 2) {
