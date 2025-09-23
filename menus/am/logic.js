@@ -1,48 +1,72 @@
-// logic.js - logic for add menu
+// logic.js - logic for add menu 
 import { vars } from "../../scripts/vars.js"
 import { writeData } from "../../scripts/dbHelpers/writeData.js"
+import { createInputHandler } from "../../scripts/inputHandler.js"
 
-function handleAddMenu(e) {
-  if (vars.addstate === "lection") {
-    if (e.key === "Backspace")
-      vars.currentLectionValue = vars.currentLectionValue.slice(0, -1)
-    else if (e.key === "Enter") {
-      if (vars.currentLectionValue.endsWith("/")) {
-        document.getElementById("lection").style.color = "#ea4f4f"
-      } else {
-        vars.addstate = "key"
-        document.getElementById("lection").style.color = "white"
-        document.getElementById("lectiont").style.color = "white"
-        e.preventDefault()
-      }
-    } else if (e.key.length === 1) vars.currentLectionValue += e.key
-    document.getElementById("lection").innerText = vars.currentLectionValue
-  } else if (vars.addstate === "key") {
-    if (e.key === "Backspace") vars.currentKeyValue = vars.currentKeyValue.slice(0, -1)
-    else if (e.key === "Enter") {
-      vars.addstate = "value"
-      document.getElementById("key").style.color = "white"
-      document.getElementById("value").style.display = "block"
+const handleAddMenu = createInputHandler({
+  getCurrentState: () => vars.addstate,
 
-      e.preventDefault()
-    } else if (e.key.length === 1) vars.currentKeyValue += e.key
-    document.getElementById("key").innerText = vars.currentKeyValue
-  } else if (vars.addstate === "value") {
-    if (e.key === "Backspace")
-      vars.currentValueValue = vars.currentValueValue.slice(0, -1)
-    else if (e.key === "Enter") {
-      writeData(vars.currentKeyValue, vars.currentValueValue, vars.currentLectionValue)
-      vars.currentKeyValue = ""
-      vars.currentValueValue = ""
-      vars.addstate = "key"
-      document.getElementById("key").innerText = ""
-      document.getElementById("key").style.color = "#5294e2"
-      document.getElementById("value").style.display = "none"
-      document.getElementById("valuevalue").innerText = ""
-      e.preventDefault()
-    } else if (e.key.length === 1) vars.currentValueValue += e.key
-    document.getElementById("valuevalue").innerText = vars.currentValueValue
+  getCurrentValue: (state) => {
+    switch (state) {
+      case "lection": return vars.currentLectionValue;
+      case "key": return vars.currentKeyValue;
+      case "value": return vars.currentValueValue;
+      default: return "";
+    }
+  },
+
+  setCurrentValue: (state, value) => {
+    switch (state) {
+      case "lection": vars.currentLectionValue = value; break;
+      case "key": vars.currentKeyValue = value; break;
+      case "value": vars.currentValueValue = value; break;
+    }
+  },
+
+  getElement: (state) => {
+    switch (state) {
+      case "lection": return document.getElementById("lection");
+      case "key": return document.getElementById("key");
+      case "value": return document.getElementById("valuevalue");
+      default: return null;
+    }
+  },
+
+  onEnter: (state, value, element) => {
+    switch (state) {
+      case "lection":
+        if (value.endsWith("/")) {
+          element.style.color = vars.redColor
+        } else {
+          vars.addstate = "key";
+          document.getElementById("lection").style.color = "white";
+          document.getElementById("lectiont").style.color = "white";
+          return { preventDefault: true };
+        }
+        break;
+
+      case "key":
+        vars.addstate = "value";
+        document.getElementById("key").style.color = "white";
+        document.getElementById("value").style.display = "block";
+        return { preventDefault: true };
+
+      case "value":
+        writeData(vars.currentKeyValue, vars.currentValueValue, vars.currentLectionValue);
+        vars.currentKeyValue = "";
+        vars.currentValueValue = "";
+        vars.addstate = "key";
+        document.getElementById("key").innerText = "";
+        document.getElementById("key").style.color = vars.themeColor
+        document.getElementById("value").style.display = "none";
+        document.getElementById("valuevalue").innerText = "";
+        return { preventDefault: true };
+    }
+  },
+
+  updateDisplay: (_, value, element) => {
+    if (element) element.innerText = value;
   }
-}
+});
 
-export { handleAddMenu }
+export { handleAddMenu };

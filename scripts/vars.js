@@ -51,6 +51,7 @@ var vars = {
   configurationValueOld: "",
   db: "",
   themeColor: "#5294e2",
+  redColor: "#ea4f4f",
   currentSessionScore: 0,
   AvabialeModes: Array.from({ length: 5 }, (e, i) => i),
   trainStats: {
