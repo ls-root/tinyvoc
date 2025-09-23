@@ -1,5 +1,6 @@
 // vars.js : variables
 var vars = {
+  version: "0.8.1",
   menu: "mm",
   addstate: "lection",
   viewstate: "none",
@@ -40,7 +41,7 @@ var vars = {
   trainstate: "lection",
   wrongAttempts: new Map(),
   currentKey: "",
-  docPages: 25,
+  docPages: 26,
   configurationState: "view",
   configurationIndexSelector: 1,
   totalConfigurationOptions: 2,
@@ -63,5 +64,9 @@ var vars = {
   GenerateModesParams: { 0: 1, 1: 0, 2: 2, 3: 2, 4: 1, },
   menuDisplayEl: document.getElementById("barp1"),
   clockDisplayEl: document.getElementById("barp2"),
+  lastChangelog: `
+  v0.8.1
+    Alphabetically sorting in Lection Menu
+  `
 }
 export { vars }

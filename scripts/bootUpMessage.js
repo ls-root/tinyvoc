@@ -11,7 +11,7 @@ async function bootUpMessage() {
   bootUpMessageHeader.innerText = "TinyVoc"
   bootUpMessageHint.innerText = "Press any key to continue..."
   bootUpMessageHint.style.opacity = "0.5"
-  bootUpMessageParagraph.innerText = await readConfig("nextBootUpMessage")
+  bootUpMessageParagraph.innerHTML = await readConfig("nextBootUpMessage")
   bootUpMessageContainer.id = "bootUpMessageContainer"
   bootUpMessageContainer.appendChild(bootUpMessageHeader)
   bootUpMessageContainer.appendChild(bootUpMessageParagraph)

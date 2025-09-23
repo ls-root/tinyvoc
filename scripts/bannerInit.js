@@ -1,12 +1,14 @@
 // bannerInit.js - initialize Banners for menus
 import { mkbanner } from "./sharedHelpers/banner.js"
+import { vars } from "./vars.js"
 
 function bannerInit() {
+  document.getElementById("vocbanner").innerText = mkbanner("TinyVoc v" + vars.version, 45, "-")
+
   document.getElementById("statusheader").innerText = mkbanner("Git Status", 45, "-")
   document.getElementById("configurationheader").innerText = mkbanner("Configuration", 45, "-")
   document.getElementById("correctbanner").innerText = mkbanner("Correct vocabulary", 45, "-")
   document.getElementById("statsbanner").innerText = mkbanner("Training Statistics", 45, "=")
-  document.getElementById("vocbanner").innerText = mkbanner("TinyVoc", 45, "-")
   document.getElementById("addbanner").innerText = mkbanner("Add vocabulary", 45, "-")
   document.getElementById("trainbanner").innerText = mkbanner("Train vocabulary", 45, "-")
   document.getElementById("viewbanner").innerText = mkbanner("View vocabulary", 45, "-")

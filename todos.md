@@ -2,4 +2,4 @@
 - [ ] word wrap in input
 - [x] input function
 - [ ] when training finished r to restart
-- [ ] lection view sorted
+- [x] lection view sorted
