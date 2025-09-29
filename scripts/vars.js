@@ -1,6 +1,6 @@
 // vars.js : variables
 var vars = {
-  version: "0.8.1",
+  version: "0.8.2",
   menu: "mm",
   addstate: "lection",
   viewstate: "none",
@@ -65,8 +65,8 @@ var vars = {
   menuDisplayEl: document.getElementById("barp1"),
   clockDisplayEl: document.getElementById("barp2"),
   lastChangelog: `
-  v0.8.1
-    Alphabetically sorting in Lection Menu
+  v0.8.2
+    Do postConfigLoad stuff after saving
   `
 }
 export { vars }

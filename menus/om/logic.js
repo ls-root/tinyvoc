@@ -2,6 +2,7 @@
 import { vars } from "../../scripts/vars.js"
 import { updateSelection } from "./updateSelection.js"
 import { saveConfiguration } from "../../scripts/dbHelpers/config/saveConfiguration.js"
+import { postConfigLoad } from "../../scripts/postConfigLoad.js"
 
 // NOTE: When adding new config values they need to be changed in defaultConfiguration, configuration and loadConfiguration.js
 function handleConfigurationMenu(e) {
@@ -62,6 +63,7 @@ function handleConfigurationMenu(e) {
       document.getElementById("c" + vars.configurationIndexSelector + "-v").style.color = "#5294e2"
       document.getElementById("c" + vars.configurationIndexSelector + "-i").innerText = "=>"
       saveConfiguration()
+      postConfigLoad()
     } else if (e.key.length === 1) {
       vars.configurationValue += e.key
     }
